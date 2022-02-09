@@ -1,2 +1,5 @@
 Flask
 google-cloud-storage
+pandas
+lxml
+matplotlib

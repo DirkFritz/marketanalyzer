@@ -6,7 +6,15 @@
 
 {% block body %}
 
-<img src="{{url_for('static', filename='ndxgroupcap.png')}}" />
-<img src="{{url_for('static', filename='ndxgroupequal.png')}}" />
-{{ contents }}
+
+<div id='chart' class='chart'”></div>
+
+{% endblock %}
+
+{% block script %}
+<script src='https://cdn.plot.ly/plotly-latest.min.js'></script>
+<script type='text/javascript'>
+  var graphs = {{contents | safe}};
+  Plotly.plot('chart',graphs,{});
+</script>
 {% endblock %}

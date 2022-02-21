@@ -1,7 +1,5 @@
 import pandas as pd
-import plotly
-import plotly.express as px
-import json
+
 
 pd.options.mode.chained_assignment = None  # default='warn'
 
@@ -28,16 +26,19 @@ class NdxData:
             columns=["Group", "DateTime", "Market Cap", "Percent", "Average Percent"]
         )
 
+    def get_last_day(self):
+        return self.ndx_prices_df["DateTime"].max()
+
     def set_comparison_group(self, ticker_symbols=[]):
 
         self.ticker_symbols = ticker_symbols
-        self.ndx100 = self.nasdaq_df.loc[
-            self.nasdaq_df["Symbol"].isin(self.nasdaq100_df["Ticker"].tolist())
-        ]
+        ndx100_symbols = self.nasdaq100_df["Ticker"].tolist()
+        self.ndx100 = self.nasdaq_df.loc[self.nasdaq_df["Symbol"].isin(ndx100_symbols)]
         self.ndx100_faang = self.ndx100.loc[self.ndx100["Symbol"].isin(ticker_symbols)]
         self.ndx100_no_faang = self.ndx100.loc[
             ~self.ndx100["Symbol"].isin(ticker_symbols)
         ]
+
         self.ndx100_no_faang_tech = self.ndx100_no_faang.loc[
             self.ndx100_no_faang["Sector"] == "Technology"
         ]
@@ -72,31 +73,9 @@ class NdxData:
         self.market_cap_period_groups["DateTime"] = pd.to_datetime(
             self.market_cap_period_groups["DateTime"], format="%Y%m%d"
         )
+        self.market_cap_period_groups.to_csv("ndxdgroups.csv")
 
-    def save_plot(self):
-        # ax = self.market_cap_period_groups[self.market_cap_period_groups["Group"] == "MANTA"].set_index('DateTime')[['Percent']].plot(figsize=(15,5),grid=True)
-        # ax = self.market_cap_period_groups[self.market_cap_period_groups["Group"] == "TECH"].set_index('DateTime')[['Percent']].plot(ax=ax,grid=True)
-        # ax = self.market_cap_period_groups[self.market_cap_period_groups["Group"] == "OTHERS"].set_index('DateTime')[['Percent']].plot(ax=ax,grid=True)
-        # ax.legend(["MANTA", "TECH","OTHERS"])
-
-        plot_df = self.market_cap_period_groups[
-            self.market_cap_period_groups["Group"] == "MANTA"
-        ]
-
-        fig = px.line(plot_df, x="DateTime", y="Percent")
-
-        return json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
-
-        # figure = ax.get_figure()
-        # figure.savefig("static/ndxgroupcap.png")
-
-        # ax = self.market_cap_period_groups[self.market_cap_period_groups["Group"] == "MANTA"].set_index('DateTime')[['Average Percent']].plot(figsize=(15,5),grid=True)
-        # ax = self.market_cap_period_groups[self.market_cap_period_groups["Group"] == "TECH"].set_index('DateTime')[['Average Percent']].plot(ax=ax,grid=True)
-        # ax = self.market_cap_period_groups[self.market_cap_period_groups["Group"] == "OTHERS"].set_index('DateTime')[['Average Percent']].plot(ax=ax,grid=True)
-        # ax.legend(["MANTA", "TECH","OTHERS"])
-
-        # figure = ax.get_figure()
-        # figure.savefig("static/ndxgroupequal.png")
+   
 
     def create_market_cap_period(
         self, group_name, symbols_group, compare_date1, compare_date2
@@ -122,6 +101,7 @@ class NdxData:
             price_per_stock.loc[:, "Market Cap"] = (
                 price_per_stock["Price"] * number_shares
             )
+
             price_per_stock.loc[:, "Percent"] = (
                 price_per_stock["Price"] / stock_prices_start.values[0]
             ) * 100 - 100
@@ -167,4 +147,4 @@ class NdxData:
                 (self.market_cap_period_groups["Group"] == group_name)
             ]["Market Cap"]
             / market_cap_start_date
-        ) * 100
+        ) * 100 - 100

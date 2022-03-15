@@ -1,68 +1,132 @@
-from flask import Flask, render_template, url_for, request, redirect
 from google.cloud import storage
-import pandas as pd
-
-import plotly
+import dash
+from dash import dcc
+from dash import html
 import plotly.express as px
-import json
+import pandas as pd
+from dash.dependencies import Input, Output
+from datetime import datetime, timedelta
+from db import Db
+from ndxdata import NdxData
 
-app = Flask(__name__)
+import dash_bootstrap_components as dbc
+
+dash_app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
+dash_app.title = "LT AI"
+app = dash_app.server
+
+db = Db()
+[min, max] = db.get_min_max_historic("date")
+print(min, max)
 
 
-def download_blob(bucket_name, source_blob_name, destination_file_name):
-    """Downloads a blob from the bucket."""
-
-    storage_client = storage.Client()
-
-    bucket = storage_client.bucket(bucket_name)
-
-    blob = bucket.blob(source_blob_name)
-    blob.download_to_filename(destination_file_name)
-
-    print(
-        "Downloaded storage object {} from bucket {} to local file {}.".format(
-            source_blob_name, bucket_name, destination_file_name
-        )
+def getNdxData(start_date):
+    db = Db()
+    data_db = db.select_historic_date(start_date)
+    stocks_db_df = pd.DataFrame(
+        columns=["Symbol", "DateTime", "Open", "Close", "High", "Low", "Volume"]
+    )
+    stocks_db_df = pd.concat(
+        [
+            stocks_db_df,
+            pd.DataFrame(
+                data_db,
+                columns=[
+                    "Symbol",
+                    "DateTime",
+                    "Open",
+                    "Close",
+                    "High",
+                    "Low",
+                    "Volume",
+                ],
+            ),
+        ]
     )
 
+    ndx_data = NdxData("gs://lt-capital.de/nasdaq_screener.csv", stocks_db_df)
+    ndx_data.set_comparison_group(["AAPL", "GOOG", "GOOGL", "MSFT", "NVDA", "TSLA"])
+    date2 = ndx_data.get_last_day()
 
-def get_plot(path):
+    ndxgroups_df = ndx_data.set_compare_dates(start_date, date2)
+    print(ndxgroups_df)
 
-    ndxgroups = pd.read_csv(path)
+    db.close()
 
-    fig1 = px.line(
-        ndxgroups,
+    return ndxgroups_df
+
+
+@dash_app.callback(
+    Output("markectcap_percent", "children"),
+    Input("my-date-picker-range", "start_date"),
+    Input("my-date-picker-range", "end_date"),
+)
+def update_ndx_market_cap(start_date, end_date):
+    end_date = datetime.strptime(end_date + " 16:00:00", "%Y-%m-%d %H:%M:%S")
+    start_date = datetime.strptime(start_date + " 00:00:00", "%Y-%m-%d %H:%M:%S")
+    ndxgroups_df = getNdxData(start_date.date())
+    selection_df = ndxgroups_df[
+        (ndxgroups_df["DateTime"] >= start_date.date())
+        & (ndxgroups_df["DateTime"] <= end_date.date())
+    ]
+
+    fig = px.line(
+        selection_df,
         x="DateTime",
         y="Percent",
         color="Group",
         labels={"DateTime": "Zeit", "Percent": "Prozent"},
+        title="Prozentualer Verlauf Marktkapitalisierung",
     )
-    fig1.update_layout(paper_bgcolor="#c5a089", plot_bgcolor="RGB(210,210,210)")
+    fig.update_layout(plot_bgcolor="RGB(210,210,210)")
 
     fig2 = px.line(
-        ndxgroups,
+        selection_df,
         x="DateTime",
         y="Average Percent",
         color="Group",
         labels={"DateTime": "Zeit", "Average Percent": "Prozent"},
+        title="Prozentualer Verlauf gleich gewichtet",
     )
-    fig2.update_layout(paper_bgcolor="#c5a089", plot_bgcolor="RGB(210,210,210)")
+    fig2.update_layout(plot_bgcolor="RGB(210,210,210)")
+    return dcc.Graph(figure=fig), dcc.Graph(figure=fig2)
 
-    return [
-        json.dumps(fig1, cls=plotly.utils.PlotlyJSONEncoder),
-        json.dumps(fig2, cls=plotly.utils.PlotlyJSONEncoder),
+
+dash_app.layout = html.Div(
+    children=[
+        html.H1(children="Nasdaq Relative Rendite"),
+        html.Div(
+            children=[
+                "Zeitraum auswählen",
+            ]
+        ),
+        html.Div(
+            children=[
+                dcc.DatePickerRange(
+                    id="my-date-picker-range",
+                    min_date_allowed=min,
+                    max_date_allowed=max,
+                    start_date=min,
+                    initial_visible_month=max,
+                    end_date=max,
+                ),
+                html.Div(id="markectcap_percent"),
+            ]
+        ),
+        html.A(
+            "Datenschutzerklärung", href="https://lt-capital.de/datenschutzerklaerung/"
+        ),
+        html.Br(),
+        html.A("Impressum", href="https://lt-capital.de/impressum/"),
+        html.Br(),
+        html.A("LT Capital", href="https://lt-capital.de/"),
     ]
+)
 
 
-@app.route("/", methods=["GET"])
-def index():
-
-    plot = None
-
-    plot = get_plot("gs://lt-capital.de/ndxgroups.csv")
-
-    return render_template("index.html", contents=plot)
+def main():
+    dash_app.run_server(debug=False)
 
 
 if __name__ == "__main__":
-    app.run(host="127.0.0.1", port=8080, debug=True)
+    main()

@@ -5,17 +5,13 @@ pd.options.mode.chained_assignment = None  # default='warn'
 
 
 class NdxData:
-    def __init__(self, stock_data_file, stock_prices_file):
+    def __init__(self, stock_data_file, stocks_db_df):
         self.nasdaq_df = pd.read_csv(stock_data_file)
         self.nasdaq_df = self.nasdaq_df.set_index("Symbol")
 
-        self.ndx_prices_df = pd.read_csv(stock_prices_file)
-        self.ndx_prices_df = self.ndx_prices_df.drop(["Unnamed: 0"], axis=1)
-        self.nasdaq_df = self.nasdaq_df.reset_index()
+        self.ndx_prices_df = stocks_db_df
 
-        self.ndx_prices_df["DateTime"] = pd.to_datetime(
-            self.ndx_prices_df["DateTime"], format="%Y-%m-%d %H:%M:%S"
-        )
+        self.nasdaq_df = self.nasdaq_df.reset_index()
 
         self.nasdaq100_df = pd.read_html("https://en.wikipedia.org/wiki/Nasdaq-100")[3]
 
@@ -70,12 +66,8 @@ class NdxData:
         self.create_market_cap_period_groups("MANTA")
         self.create_market_cap_period_groups("TECH")
         self.create_market_cap_period_groups("OTHERS")
-        self.market_cap_period_groups["DateTime"] = pd.to_datetime(
-            self.market_cap_period_groups["DateTime"], format="%Y%m%d"
-        )
-        self.market_cap_period_groups.to_csv("ndxdgroups.csv")
 
-   
+        return self.market_cap_period_groups
 
     def create_market_cap_period(
         self, group_name, symbols_group, compare_date1, compare_date2
@@ -90,20 +82,20 @@ class NdxData:
         for symbol in symbols_group:
             number_shares = df.loc[symbol]["No Shares"]
             stock_prices_start = self.ndx_prices_df[
-                (self.ndx_prices_df["DateTime"] == compare_date1)
+                (self.ndx_prices_df["DateTime"] >= compare_date1)
                 & (self.ndx_prices_df["Symbol"] == symbol)
-            ]["Price"]
+            ]["Close"]
             price_per_stock = self.ndx_prices_df.loc[
                 (self.ndx_prices_df["DateTime"] >= compare_date1)
                 & (self.ndx_prices_df["DateTime"] <= compare_date2)
                 & (self.ndx_prices_df["Symbol"] == symbol)
             ]
             price_per_stock.loc[:, "Market Cap"] = (
-                price_per_stock["Price"] * number_shares
+                price_per_stock["Close"] * number_shares
             )
 
             price_per_stock.loc[:, "Percent"] = (
-                price_per_stock["Price"] / stock_prices_start.values[0]
+                price_per_stock["Close"] / stock_prices_start.values[0]
             ) * 100 - 100
             price_per_stock["Group"] = group_name
 

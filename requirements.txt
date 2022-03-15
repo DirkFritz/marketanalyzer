@@ -5,4 +5,14 @@ lxml
 fsspec
 gcsfs
 plotly
+dash
+dash-html-components
+dash-core-components
+dash-table
+dash-daq
+dash_bootstrap_components
+datetime
+mysql-connector-python
+
+
 

@@ -3,33 +3,45 @@ import dash_bootstrap_components as dbc
 from datetime import datetime
 import plotly.express as px
 from dbqueries import getNdxData
+from db import Db
 
-index_analysis = [
-    dcc.DatePickerRange(
+
+def generateDatePicker():
+    db = Db()
+    [min, max] = db.get_min_max_historic("date")
+    print(min, max)
+    db.close=()
+    return dcc.DatePickerRange(
         id="my-date-picker-range",
         min_date_allowed=min,
         max_date_allowed=max,
         start_date="2022-01-03",
         initial_visible_month=max,
         end_date=max,
-    ),
-    dbc.DropdownMenu(
-        [
-            dbc.DropdownMenuItem(
-                "Performance nach Marktkapitalisierung",
-                id="index_perfromance_market_cap",
-                active=True,
-            ),
-            dbc.DropdownMenuItem(
-                "Performance Gleichgewichtung",
-                id="index_perfromance_equal",
-            ),
-        ],
-        label="Datenauswertung",
-        id="data_analysis",
-    ),
-    html.Div(id="markectcap_percent"),
-]
+    )
+
+
+index_analysis = html.Div(
+    children=[
+        generateDatePicker(),
+        dbc.DropdownMenu(
+            [
+                dbc.DropdownMenuItem(
+                    "Performance nach Marktkapitalisierung",
+                    id="index_perfromance_market_cap",
+                    active=True,
+                ),
+                dbc.DropdownMenuItem(
+                    "Performance Gleichgewichtung",
+                    id="index_perfromance_equal",
+                ),
+            ],
+            label="Datenauswertung",
+            id="data_analysis",
+        ),
+        html.Div(id="markectcap_percent"),
+    ]
+)
 
 
 @callback(

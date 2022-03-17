@@ -9,9 +9,7 @@ main_layout = html.Div(
                 "Zeitraum auswählen",
             ]
         ),
-        html.Div(
-            children=indexanalysis.index_analysis
-        ),
+        indexanalysis.index_analysis,
         html.A(
             "Datenschutzerklärung", href="https://lt-capital.de/datenschutzerklaerung/"
         ),

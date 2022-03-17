@@ -10,16 +10,12 @@ dash_app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 dash_app.title = "LT AI"
 app = dash_app.server
 
-db = Db()
-[min, max] = db.get_min_max_historic("date")
-print(min, max)
-
 
 dash_app.layout = layout.main_layout
 
 
 def main():
-    dash_app.run_server(debug=False)
+    dash_app.run_server(debug=True)
 
 
 if __name__ == "__main__":

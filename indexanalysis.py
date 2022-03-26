@@ -179,7 +179,12 @@ index_analysis = [
         # links_left=True,
     ),
     html.Div(generateDatePicker()),
-    html.Div(dbc.Tabs(id="markectcap_percent", active_tab="Zeit")),
+    html.P(
+        dbc.Spinner(
+            html.Div(dbc.Tabs(id="markectcap_percent", active_tab="Zeit")),
+            color="primary",
+        )
+    ),
     dbc.Col(
         [
             generateGroupInput(),
@@ -385,6 +390,8 @@ def generateIndexGraph(
     Input("my-date-picker-range", "start_date"),
     Input("my-date-picker-range", "end_date"),
     Input("index_perfromance_market_cap", "active"),
+    Input("symbol-group-udpate-single", "n_clicks"),
+    Input("symbol-group-udpate", "n_clicks"),
     State("symbol-group-value", "data"),
     State("symbol-group-value-single", "data"),
 )
@@ -392,6 +399,8 @@ def update_ndx_market_cap(
     start_date,
     end_date,
     market_cap_active,
+    update_group,
+    update_single,
     data,
     data_single,
 ):

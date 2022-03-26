@@ -1,8 +1,5 @@
-from google.cloud import storage
 import dash
-from dash import dcc
 import layout
-
 
 import dash_bootstrap_components as dbc
 

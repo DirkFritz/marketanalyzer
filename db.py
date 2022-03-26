@@ -7,7 +7,8 @@ class Db:
 
         try:
             self.connection = mysql.connector.connect(
-                unix_socket="/cloudsql/marketdata-339820:europe-west3:stockdata",
+                host="34.141.0.22",
+                unix_socket="/cloudsql/marketdata-339820:europe-west3:stocksdata",
                 database="stockprices",
                 user="root",
                 password="ltcapital",
@@ -21,6 +22,7 @@ class Db:
             print("Error processing database", e)
 
     def close(self):
+        print("Close mysql connection")
         self.cursor.close()
         self.connection.close()
 
@@ -37,6 +39,12 @@ class Db:
 
     def select_historic_date(self, date):
         sql = f"SELECT * FROM historic WHERE date >='{date}'"
+
+        self.cursor.execute(sql)
+        return self.cursor.fetchall()
+
+    def get_unique_values(self, col):
+        sql = f"SELECT DISTINCT({col}) FROM historic"
 
         self.cursor.execute(sql)
         return self.cursor.fetchall()

@@ -6,13 +6,7 @@ class Db:
     def __init__(self):
 
         try:
-            self.connection = mysql.connector.connect(
-                host="34.141.0.22",
-                unix_socket="/cloudsql/marketdata-339820:europe-west3:stocksdata",
-                database="stockprices",
-                user="root",
-                password="ltcapital",
-            )
+            self.connection = mysql.connector.connect()
             if self.connection.is_connected():
                 db_Info = self.connection.get_server_info()
                 print("Connected to MySQL Server version ", db_Info)

@@ -1,0 +1,40 @@
+.CalendarDay__selected_span {
+    background: #1b0bad;
+    border: 1px double #5771e7;
+    color: #fff
+  }
+  .CalendarDay__selected_span:active,
+  .CalendarDay__selected_span:hover {
+    background: #5771e7;
+    border: 1px double #5771e7;
+    color: #fff
+  }
+  .CalendarDay__selected,
+  .CalendarDay__selected:active,
+  .CalendarDay__selected:hover {
+    background: #415ee0;
+    border: 1px double #415ee0;
+    color: #fff
+  }
+  .CalendarDay__hovered_span,
+  .CalendarDay__hovered_span:hover {
+    background: #3454e0;
+    border: 1px double #3958e2;
+    color: #052ddf
+  }
+  .CalendarDay__hovered_span:active {
+    background: #415ee0;
+    border: 1px double #415ee0;
+    color: #052ddf
+  }
+
+  .DateInput_input__focused {
+    outline: 0;
+    background: #fff;
+    border: 0;
+    border-top: 0;
+    border-right: 0;
+    border-bottom: 2px solid #052ddf;
+    border-left: 0;
+}
+

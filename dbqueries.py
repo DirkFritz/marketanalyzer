@@ -5,7 +5,7 @@ from db import Db
 from ndxdata import NdxData
 
 
-def getNdxData(start_date, symbols, symbols_single):
+def getNdxData(start_date, end_date, symbols, symbols_single):
     db = Db()
     data_db = db.select_historic_date(start_date)
     stocks_db_df = pd.DataFrame(
@@ -35,10 +35,11 @@ def getNdxData(start_date, symbols, symbols_single):
 
     ndx_data = NdxData("gs://lt-capital.de/nasdaq_screener_2.csv", stocks_db_df)
     ndx_data.set_comparison_group(symbols)
-    date2 = ndx_data.get_last_day()
+    if end_date > ndx_data.get_last_day():
+        end_date = ndx_data.get_last_day()
 
     ndxgroups_df, ndxsingle_df, ndxperfomrance_df = ndx_data.set_compare_dates(
-        start_date, date2, symbols_single
+        start_date, end_date, symbols_single
     )
     ndxgroups_df.loc[ndxgroups_df["Group"] == "MANTA", "Group"] = group_name
 

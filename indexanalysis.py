@@ -127,7 +127,7 @@ def update_single_table(add, delete, symbol, data):
     changed_id = [p["prop_id"] for p in callback_context.triggered][0]
     if "symbol-group-add-single" in changed_id:
         if data is not None:
-            if not symbol in data["Symbol"] and symbol is not None:
+            if not symbol in data["Symbol"] and symbol is not None and not symbol == "":
                 data["Symbol"].append(symbol)
     elif "symbol-group-delete-single" in changed_id:
         data = {"Symbol": []}
@@ -293,7 +293,7 @@ def generateIndexGraph(
     end_date = datetime.strptime(end_date + " 16:00:00", "%Y-%m-%d %H:%M:%S")
     start_date = datetime.strptime(start_date + " 00:00:00", "%Y-%m-%d %H:%M:%S")
     ndxgroups_df, ndxsingle_df, ndxperfomrance_df = getNdxData(
-        start_date.date(), symbols, symbols_single
+        start_date.date(), end_date.date(), symbols, symbols_single
     )
 
     selection_df = ndxgroups_df[

@@ -48,20 +48,22 @@ class NdxData:
 
     def set_compare_dates(self, compare_date1, compare_date2, symbols=[]):
         print(compare_date1)
-        if self.ndx_prices_df["DateTime"].isin([compare_date1]).any() == False:
-            compare_date1 = compare_date1 + datetime.timedelta(days=1)
-        if self.ndx_prices_df["DateTime"].isin([compare_date1]).any() == False:
-            compare_date1 = compare_date1 + datetime.timedelta(days=1)
-        if self.ndx_prices_df["DateTime"].isin([compare_date1]).any() == False:
-            compare_date1 = compare_date1 + datetime.timedelta(days=1)
-
-        if self.ndx_prices_df["DateTime"].isin([compare_date2]).any() == False:
-            compare_date2 = compare_date2 + datetime.timedelta(days=1)
-        if self.ndx_prices_df["DateTime"].isin([compare_date2]).any() == False:
-            compare_date2 = compare_date2 + datetime.timedelta(days=1)
-        if self.ndx_prices_df["DateTime"].isin([compare_date2]).any() == False:
-            compare_date2 = compare_date2 + datetime.timedelta(days=1)
+        i = 0
+        while i < 5:
+            if self.ndx_prices_df["DateTime"].isin([compare_date1]).any() == False:
+                compare_date1 = compare_date1 + datetime.timedelta(days=1)
+            else:
+                break
+            i = i + 1
+        i = 0
+        while i < 5:
+            if self.ndx_prices_df["DateTime"].isin([compare_date2]).any() == False:
+                compare_date2 = compare_date2 + datetime.timedelta(days=1)
+            else:
+                break
+            i = i + 1
         print(compare_date1)
+        print(compare_date2)
 
         if len(self.ticker_symbols):
             self.create_market_cap_period(

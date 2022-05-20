@@ -11,14 +11,14 @@ import dash_bootstrap_components as dbc
 from datetime import datetime, timedelta
 import plotly.express as px
 from dbqueries import getNdxData, get_symbols
-from db import Db
+from db.db import Db
 import pandas as pd
 import math
 
 
 def generateDatePicker():
     db = Db()
-    [min, max] = db.get_min_max_historic("date")
+    [min, max] = db.get_min_max("historic", "date")
     print(min, max)
     db.close = ()
     start_date = datetime.today() - timedelta(days=30)
@@ -146,13 +146,17 @@ index_analysis = [
                         id="index_ndx100",
                         active=True,
                     ),
+                    dbc.DropdownMenuItem(
+                        "S&P500",
+                        id="index_spx",
+                        active=False,
+                    ),
                 ],
                 label="Nasdasq100",
                 id="index_analysis",
                 color="primary",
                 style={"marginRight": "10px"},
                 in_navbar=True,
-                disabled=True,
             ),
             dbc.DropdownMenu(
                 [
@@ -252,6 +256,43 @@ def set_index_analysis(n1, n2):
     )
 
 
+@callback(
+    Output("index_analysis", "label"),
+    Output("index_ndx100", "active"),
+    Output("index_spx", "active"),
+    [
+        Input("index_ndx100", "n_clicks"),
+        Input("index_spx", "n_clicks"),
+    ],
+)
+def set_index(n1, n2):
+
+    id_lookup = {
+        "index_ndx100": "Nasdaq100",
+        "index_spx": "S&P500",
+    }
+
+    active_lookup = {
+        "index_ndx100": False,
+        "index_spx": False,
+    }
+    ctx = callback_context
+    if (n1 is None and n2 is None) or not ctx.triggered:
+        return (
+            id_lookup["index_ndx100"],
+            True,
+            False,
+        )
+
+    button_id = ctx.triggered[0]["prop_id"].split(".")[0]
+    active_lookup[button_id] = True
+    return (
+        id_lookup[button_id],
+        active_lookup["index_ndx100"],
+        active_lookup["index_spx"],
+    )
+
+
 def generateHeatmap(stocks_single_df):
 
     numShares = len(stocks_single_df["Percent"])
@@ -266,7 +307,7 @@ def generateHeatmap(stocks_single_df):
 
     performance_stocks = stocks_single_df["Percent"]
     labels_stocks = stocks_single_df["Symbol"]
-
+    heatmap_size = max(heatmap_size, 10)
     i = 0
     for i in range(heatmap_size):
         j = 0
@@ -288,12 +329,31 @@ def generateHeatmap(stocks_single_df):
 
 
 def generateIndexGraph(
-    start_date, end_date, market_cap_active, symbols, symbols_single
+    start_date,
+    end_date,
+    market_cap_active,
+    index_ndx100_active,
+    symbols,
+    symbols_single,
 ):
     end_date = datetime.strptime(end_date + " 16:00:00", "%Y-%m-%d %H:%M:%S")
     start_date = datetime.strptime(start_date + " 00:00:00", "%Y-%m-%d %H:%M:%S")
+
+    idx_symbols = None
+    if index_ndx100_active:
+        idx_symbols = pd.read_html("https://en.wikipedia.org/wiki/Nasdaq-100")[3][
+            "Ticker"
+        ].to_list()
+    else:
+        idx_data = pd.read_html(
+            "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies"
+        )[0]
+        idx_data["Symbol"] = idx_data["Symbol"].str.replace(".", " ", regex=True)
+
+        idx_symbols = idx_data["Symbol"].to_list()
+
     ndxgroups_df, ndxsingle_df, ndxperfomrance_df = getNdxData(
-        start_date.date(), end_date.date(), symbols, symbols_single
+        start_date.date(), end_date.date(), symbols, symbols_single, idx_symbols
     )
 
     selection_df = ndxgroups_df[
@@ -390,6 +450,7 @@ def generateIndexGraph(
     Input("my-date-picker-range", "start_date"),
     Input("my-date-picker-range", "end_date"),
     Input("index_perfromance_market_cap", "active"),
+    Input("index_ndx100", "active"),
     Input("symbol-group-udpate-single", "n_clicks"),
     Input("symbol-group-udpate", "n_clicks"),
     State("symbol-group-value", "data"),
@@ -399,6 +460,7 @@ def update_ndx_market_cap(
     start_date,
     end_date,
     market_cap_active,
+    index_ndx100_active,
     update_group,
     update_single,
     data,
@@ -410,6 +472,7 @@ def update_ndx_market_cap(
             start_date,
             end_date,
             market_cap_active,
+            index_ndx100_active,
             data["Symbol"],
             data_single["Symbol"],
         )

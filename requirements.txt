@@ -13,6 +13,7 @@ dash-daq
 dash_bootstrap_components
 datetime
 mysql-connector-python
+gunicorn
 
 
 

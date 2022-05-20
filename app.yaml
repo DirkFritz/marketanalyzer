@@ -3,3 +3,6 @@ runtime: python39
 handlers:
 - url: /.*
   script: auto
+
+entrypoint: gunicorn -b :8080 -w 1 main:app --timeout 240
+

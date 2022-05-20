@@ -6,15 +6,13 @@ pd.options.mode.chained_assignment = None  # default='warn'
 
 
 class NdxData:
-    def __init__(self, stock_data_file, stocks_db_df):
-        self.nasdaq_df = pd.read_csv(stock_data_file)
-        self.nasdaq_df = self.nasdaq_df.set_index("Symbol")
+    def __init__(self, stocks_db_df, companies, symbols_index):
 
-        self.ndx_prices_df = stocks_db_df
+        self.idx_prices_df = stocks_db_df
+        self.companies = companies
+        self.companies = self.companies.reset_index()
 
-        self.nasdaq_df = self.nasdaq_df.reset_index()
-
-        self.nasdaq100_df = pd.read_html("https://en.wikipedia.org/wiki/Nasdaq-100")[3]
+        self.symbols_index = symbols_index
 
         self.market_cap_period_df = pd.DataFrame()
         self.ticker_symbols = []
@@ -24,40 +22,36 @@ class NdxData:
         )
 
     def get_last_day(self):
-        return self.ndx_prices_df["DateTime"].max()
+        return self.idx_prices_df["DateTime"].max()
 
     def set_comparison_group(self, ticker_symbols=[]):
 
         self.ticker_symbols = ticker_symbols
-        self.ndx100_symbols = self.nasdaq100_df["Ticker"].tolist()
-        self.ndx100 = self.nasdaq_df.loc[
-            self.nasdaq_df["Symbol"].isin(self.ndx100_symbols)
-        ]
+        self.idx_symbols = self.symbols_index
+        self.idx = self.companies.loc[self.companies["Symbol"].isin(self.idx_symbols)]
 
-        self.ndx100_faang = self.ndx100.loc[self.ndx100["Symbol"].isin(ticker_symbols)]
-        self.ndx100_no_faang = self.ndx100.loc[
-            ~self.ndx100["Symbol"].isin(ticker_symbols)
-        ]
+        self.idx_faang = self.idx.loc[self.idx["Symbol"].isin(ticker_symbols)]
+        self.idx_no_faang = self.idx.loc[~self.idx["Symbol"].isin(ticker_symbols)]
 
-        self.ndx100_no_faang_tech = self.ndx100_no_faang.loc[
-            self.ndx100_no_faang["Sector"] == "Technology"
+        self.idx_no_faang_tech = self.idx_no_faang.loc[
+            self.idx_no_faang["Sector"] == "Technology"
         ]
-        self.ndx100_no_faang_no_tech = self.ndx100_no_faang.loc[
-            self.ndx100_no_faang["Sector"] != "Technology"
+        self.idx_no_faang_no_tech = self.idx_no_faang.loc[
+            self.idx_no_faang["Sector"] != "Technology"
         ]
 
     def set_compare_dates(self, compare_date1, compare_date2, symbols=[]):
         print(compare_date1)
         i = 0
         while i < 5:
-            if self.ndx_prices_df["DateTime"].isin([compare_date1]).any() == False:
+            if self.idx_prices_df["DateTime"].isin([compare_date1]).any() == False:
                 compare_date1 = compare_date1 + datetime.timedelta(days=1)
             else:
                 break
             i = i + 1
         i = 0
         while i < 5:
-            if self.ndx_prices_df["DateTime"].isin([compare_date2]).any() == False:
+            if self.idx_prices_df["DateTime"].isin([compare_date2]).any() == False:
                 compare_date2 = compare_date2 + datetime.timedelta(days=1)
             else:
                 break
@@ -71,19 +65,19 @@ class NdxData:
             )
         self.create_market_cap_period(
             "TECH",
-            self.ndx100_no_faang_tech["Symbol"].tolist(),
+            self.idx_no_faang_tech["Symbol"].tolist(),
             compare_date1,
             compare_date2,
         )
         self.create_market_cap_period(
             "OTHERS",
-            self.ndx100_no_faang_no_tech["Symbol"].tolist(),
+            self.idx_no_faang_no_tech["Symbol"].tolist(),
             compare_date1,
             compare_date2,
         )
         self.create_market_cap_period(
             "ALL",
-            self.ndx100["Symbol"].tolist(),
+            self.idx["Symbol"].tolist(),
             compare_date1,
             compare_date2,
         )
@@ -101,7 +95,7 @@ class NdxData:
 
         perfomrance_single_start = self.market_cap_period_df.loc[
             (
-                self.market_cap_period_df["Symbol"].isin(self.ndx100_symbols)
+                self.market_cap_period_df["Symbol"].isin(self.idx_symbols)
                 & self.market_cap_period_df["Group"].isin(["ALL"])
                 & self.market_cap_period_df["DateTime"].isin([compare_date1])
             ),
@@ -110,7 +104,7 @@ class NdxData:
 
         perfomrance_single = self.market_cap_period_df.loc[
             (
-                self.market_cap_period_df["Symbol"].isin(self.ndx100_symbols)
+                self.market_cap_period_df["Symbol"].isin(self.idx_symbols)
                 & self.market_cap_period_df["Group"].isin(["ALL"])
                 & self.market_cap_period_df["DateTime"].isin([compare_date2])
             ),
@@ -133,7 +127,7 @@ class NdxData:
 
         self.market_cap_start_all = self.market_cap_period_df[
             (
-                self.market_cap_period_df["Symbol"].isin(self.ndx100_symbols)
+                self.market_cap_period_df["Symbol"].isin(self.idx_symbols)
                 & self.market_cap_period_df["Group"].isin(["ALL"])
                 & self.market_cap_period_df["DateTime"].isin([compare_date1])
             )
@@ -155,28 +149,22 @@ class NdxData:
     def create_market_cap_period(
         self, group_name, symbols_group, compare_date1, compare_date2
     ):
-
-        df = self.nasdaq_df.set_index("Symbol")
-        df[df.columns[1]] = (
-            df[df.columns[1]].replace("[\$,]", "", regex=True).astype(float)
-        )
-        df["No Shares"] = df["Market Cap"] / df["Last Sale"]
+        df = self.companies.set_index("Symbol")
 
         for symbol in symbols_group:
-            number_shares = df.loc[symbol]["No Shares"]
-            stock_prices_start = self.ndx_prices_df[
-                (self.ndx_prices_df["DateTime"] >= compare_date1)
-                & (self.ndx_prices_df["Symbol"] == symbol)
+            number_shares = df.loc[symbol]["Shares"]
+            stock_prices_start = self.idx_prices_df[
+                (self.idx_prices_df["DateTime"] >= compare_date1)
+                & (self.idx_prices_df["Symbol"] == symbol)
             ]["Close"]
-            price_per_stock = self.ndx_prices_df.loc[
-                (self.ndx_prices_df["DateTime"] >= compare_date1)
-                & (self.ndx_prices_df["DateTime"] <= compare_date2)
-                & (self.ndx_prices_df["Symbol"] == symbol)
+            price_per_stock = self.idx_prices_df.loc[
+                (self.idx_prices_df["DateTime"] >= compare_date1)
+                & (self.idx_prices_df["DateTime"] <= compare_date2)
+                & (self.idx_prices_df["Symbol"] == symbol)
             ]
             price_per_stock.loc[:, "Market Cap"] = (
                 price_per_stock["Close"] * number_shares
             )
-
             price_per_stock.loc[:, "Percent"] = (
                 price_per_stock["Close"] / stock_prices_start.values[0]
             ) * 100 - 100
@@ -195,6 +183,7 @@ class NdxData:
             ]
 
             market_cap = group_per_date["Market Cap"].sum()
+
             percent_average = group_per_date["Percent"].sum() / len(
                 group_per_date["Symbol"].unique()
             )

@@ -1,5 +1,5 @@
 import dash
-import layout
+import layouts.layout as layout
 
 import dash_bootstrap_components as dbc
 

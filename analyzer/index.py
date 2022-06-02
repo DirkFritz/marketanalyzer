@@ -6,7 +6,7 @@ from analyzer.asset import Asset
 pd.options.mode.chained_assignment = None  # default='warn'
 
 
-class NdxData(Asset):
+class Index(Asset):
     def __init__(self, stocks_db_df, companies, symbols_stocks):
         super().__init__(stocks_db_df, companies, symbols_stocks)
 

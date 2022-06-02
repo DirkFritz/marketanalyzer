@@ -4,7 +4,7 @@ from dash import (
     callback_context,
 )
 import dash_bootstrap_components as dbc
-from dbqueries import get_symbols
+from db.dbqueries import get_symbols
 import pandas as pd
 
 

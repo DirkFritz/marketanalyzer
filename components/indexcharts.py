@@ -4,7 +4,7 @@ from dash import (
 import dash_bootstrap_components as dbc
 from datetime import datetime
 import plotly.express as px
-from dbqueries import getNdxData, get_stock_data
+from db.dbqueries import get_idx_data, get_stock_data
 import pandas as pd
 from components.heatmap import generateHeatmap
 
@@ -35,7 +35,7 @@ def generateIndexGraph(
 
     symbols = [symbol for symbol in symbols if symbol in idx_symbols]
 
-    ndxgroups_df, ndxperfomrance_df = getNdxData(
+    ndxgroups_df, ndxperfomrance_df = get_idx_data(
         start_date.date(), end_date.date(), symbols, idx_symbols
     )
 

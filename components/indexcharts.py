@@ -7,6 +7,7 @@ import plotly.express as px
 from db.dbqueries import get_idx_data, get_stock_data
 import pandas as pd
 from components.heatmap import generateHeatmap
+from components.helper import get_index_symbols
 
 
 def generateIndexGraph(
@@ -20,21 +21,9 @@ def generateIndexGraph(
     end_date = datetime.strptime(end_date + " 16:00:00", "%Y-%m-%d %H:%M:%S")
     start_date = datetime.strptime(start_date + " 00:00:00", "%Y-%m-%d %H:%M:%S")
 
-    idx_symbols = None
-    if index_ndx100_active:
-        idx_symbols = pd.read_html("https://en.wikipedia.org/wiki/Nasdaq-100")[3][
-            "Ticker"
-        ].to_list()
-    else:
-        idx_data = pd.read_html(
-            "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies"
-        )[0]
-        idx_data["Symbol"] = idx_data["Symbol"].str.replace(".", " ", regex=True)
-
-        idx_symbols = idx_data["Symbol"].to_list()
+    idx_symbols = get_index_symbols(index_ndx100_active)
 
     symbols = [symbol for symbol in symbols if symbol in idx_symbols]
-
     ndxgroups_df, ndxperfomrance_df = get_idx_data(
         start_date.date(), end_date.date(), symbols, idx_symbols
     )

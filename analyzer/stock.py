@@ -13,22 +13,33 @@ class Stock(Asset):
     def get_last_day(self):
         return self.stocks_prices_df["DateTime"].max()
 
+    def get_max_draw_down(self, compare_date1, compare_date2, symbols=[]):
+
+        compare_date1 = self.date_correction(compare_date1)
+        compare_date2 = self.date_correction(compare_date2)
+
+        self.stocks = self.companies.loc[
+            self.companies["Symbol"].isin(self.stocks_symbols)
+        ]
+        draw_downs = {}
+        for symbol in symbols:
+            price_per_stock = self.stocks_prices_df.loc[
+                (self.stocks_prices_df["DateTime"] >= compare_date1)
+                & (self.stocks_prices_df["DateTime"] <= compare_date2)
+                & (self.stocks_prices_df["Symbol"] == symbol)
+            ]
+
+            draw_down = (
+                price_per_stock["Close"].min() * 100 / price_per_stock["Close"].max()
+            ) - 100
+            draw_downs[symbol] = draw_down
+
+        return draw_downs
+
     def set_compare_dates(self, compare_date1, compare_date2, symbols=[]):
 
-        i = 0
-        while i < 5:
-            if self.stocks_prices_df["DateTime"].isin([compare_date1]).any() == False:
-                compare_date1 = compare_date1 + datetime.timedelta(days=1)
-            else:
-                break
-            i = i + 1
-        i = 0
-        while i < 5:
-            if self.stocks_prices_df["DateTime"].isin([compare_date2]).any() == False:
-                compare_date2 = compare_date2 + datetime.timedelta(days=1)
-            else:
-                break
-            i = i + 1
+        compare_date1 = self.date_correction(compare_date1)
+        compare_date2 = self.date_correction(compare_date2)
 
         self.stocks = self.companies.loc[
             self.companies["Symbol"].isin(self.stocks_symbols)

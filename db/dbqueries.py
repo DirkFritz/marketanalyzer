@@ -53,14 +53,29 @@ def get_stock_data(start_date, end_date, symbols_single):
         start_date, end_date, symbols_single
     )
 
-    return stock_groups, stock_single
+    draw_downs = stock_analyzer.get_max_draw_down(start_date, end_date, symbols_single)
+
+    return stock_groups, stock_single, draw_downs
 
 
-def get_symbols():
+def get_symbols(allowed_symbols=[], custom_symbols=[]):
     db = Db()
     data_db = db.get_unique_values("Symbol", "historic")
 
     db.close()
-    symbols = [symbol[0] for symbol in data_db]
+    symbols = [
+        symbol[0]
+        for symbol in data_db
+        if allowed_symbols == [] or symbol in allowed_symbols
+    ]
+    symbols = symbols + custom_symbols
 
     return symbols
+
+
+def date_picker_dates():
+    db = Db()
+    [min, max] = db.get_min_max("historic", "date")
+    db.close()
+
+    return min, max

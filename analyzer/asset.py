@@ -1,4 +1,5 @@
 import pandas as pd
+import datetime
 
 
 class Asset:
@@ -84,3 +85,13 @@ class Asset:
         ] = (
             (market_cap_end_date - market_cap_start_date) / self.market_cap_start_all
         ) * 100
+
+    def date_correction(self, date):
+        i = 0
+        while i < 5:
+            if self.stocks_prices_df["DateTime"].isin([date]).any() == False:
+                date = date + datetime.timedelta(days=1)
+            else:
+                break
+            i = i + 1
+        return date

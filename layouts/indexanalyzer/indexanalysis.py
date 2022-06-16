@@ -1,22 +1,14 @@
 from dash import (
     dcc,
     html,
-
 )
 import dash_bootstrap_components as dbc
-from db.db import Db
+from db.dbqueries import date_picker_dates
 
 from components.symboltable import generateSymbolComponent
 from components.datepicker import generateDatePicker
 import layouts.indexanalyzer.callbacks
-
-
-def date_picker_dates():
-    db = Db()
-    [min, max] = db.get_min_max("historic", "date")
-    db.close()
-
-    return min, max
+from components.helper import get_index_symbols
 
 
 index_analysis = [

@@ -1,8 +1,4 @@
-from dash import (
-    dcc,
-    html,
-    callback_context,
-)
+from dash import dcc, html, callback_context, dash_table
 import dash_bootstrap_components as dbc
 from db.dbqueries import get_symbols
 import pandas as pd
@@ -22,7 +18,27 @@ def generateGroupTable(data={}):
     return table
 
 
-def generateGroupInput(comp_name=""):
+def generateDataTable(data={}):
+
+    df = pd.DataFrame(data)
+
+    table = dash_table.DataTable(
+        df.to_dict("records"),
+        [{"name": i, "id": i} for i in df.columns],
+        style_cell={
+            "textAlign": "left",
+            "font-family": '"Helvetica Neue", Helvetica, Arial, sans-serif',
+        },
+        sort_action="native",
+        sort_mode="multi",
+        page_action="native",
+        page_current=0,
+        page_size=10,
+    )
+    return table
+
+
+def generateGroupInput(comp_name="", allowed_symbols=[], custom_symbols=[]):
 
     input = html.Div(
         [
@@ -30,7 +46,7 @@ def generateGroupInput(comp_name=""):
                 [
                     dcc.Dropdown(
                         id="symbol-group-input" + comp_name,
-                        options=get_symbols(),
+                        options=get_symbols(allowed_symbols, custom_symbols),
                         placeholder="Symbol...",
                         style={"width": "200px", "marginRight": "5px"},
                     ),
@@ -76,8 +92,10 @@ def update_table(add_id, delete_id, symbol, data):
     return generateGroupTable(data), data, "", disable_update
 
 
-def generateSymbolComponent(id=""):
-    return [
-        generateGroupInput(id),
-        html.Div(generateGroupTable(), id="symbol-group-container" + id),
-    ]
+def generateSymbolComponent(id="", allowed_symbols=[], custom_symbols=[]):
+    return html.Div(
+        children=[
+            generateGroupInput(id, allowed_symbols, custom_symbols),
+            html.Div(generateGroupTable(), id="symbol-group-container" + id),
+        ]
+    )

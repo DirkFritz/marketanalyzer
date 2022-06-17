@@ -1,5 +1,5 @@
 from faulthandler import disable
-from dash import html, Input, Output, callback, callback_context, State, html
+from dash import html, Input, Output, callback, callback_context, State, html, dcc
 import datetime
 from db.dbqueries import get_stock_data
 import pandas as pd
@@ -7,6 +7,7 @@ from algos.bestperformer import BestPerformer
 import numpy as np
 import dash_bootstrap_components as dbc
 from components.symboltable import generateSymbolComponent, update_table
+import plotly.express as px
 
 
 def generate_performer_group(performer, group_count):
@@ -34,9 +35,13 @@ def generate_performer_group(performer, group_count):
             ),
             className="mt-3",
         )
-        tabs.append(dbc.Tab(tab_content, label="Gruppe " + str(i + 1)))
+        tabs.append(
+            dbc.Tab(
+                tab_content, label="Gruppe " + str(i + 1), tab_id="Gruppe " + str(i + 1)
+            )
+        )
 
-    return dbc.Tabs(tabs)
+    return dbc.Tabs(tabs, active_tab="Gruppe 1")
 
 
 def generate_dataset(stocks_performance, stocks_draw_down, symbols, end_date, features):
@@ -90,7 +95,6 @@ def determ_best_perfomer(dates, features, group_count, symbols):
         symbols_all = symbols_all + idx_data["Symbol"].to_list()
     symbols = list(set(symbols))
 
-    print(symbols_all)
     stock_groups, stocks_performance, stocks_draw_down = get_stock_data(
         start_date,
         end_date,
@@ -105,40 +109,89 @@ def determ_best_perfomer(dates, features, group_count, symbols):
 
     performer_overview = []
     for i in range(group_count):
-        print("Gruppe ", i)
-        performance_max = performer[performer["Labels"] == i]["Performance"].max()
-        draw_down_min = performer[performer["Labels"] == i]["Draw Down"].min()
         performance_mean = performer[performer["Labels"] == i]["Performance"].mean()
         draw_down_mean = performer[performer["Labels"] == i]["Draw Down"].mean()
+        size_group = performer[performer["Labels"] == i]["Draw Down"].shape[0]
 
         performer_overview.append(
-            [
-                i + 1,
-                performance_max,
-                draw_down_min,
-                round(performance_mean, 2),
-                round(draw_down_mean, 2),
-            ]
+            [i + 1, round(performance_mean, 2), round(draw_down_mean, 2), size_group]
         )
 
     performer_overview = pd.DataFrame(
         performer_overview,
         columns=[
-            "Gruppe",
-            "Maximale Performance",
-            "Minimaler Draw Down",
-            "Durchschnitt Performance",
-            "Durchschnitt Draw Down",
+            "Group",
+            "Performance",
+            "Draw Down",
+            "Size",
         ],
     )
-    performer_overview = performer_overview.set_index("Gruppe")
+
+    performer_overview_chart = pd.melt(
+        performer_overview[["Group", "Performance", "Draw Down"]],
+        id_vars=["Group"],
+        var_name="feature",
+        value_name="value",
+    )
+
+    fig_bar = px.bar(
+        performer_overview_chart,
+        x="Group",
+        y="value",
+        color="feature",
+        barmode="group",
+        labels={"Group": "Grupe", "value": "Prozent", "feature": "Merkmal"},
+    )
+    performer_overview_chart_count = pd.melt(
+        performer_overview[["Group", "Size"]],
+        id_vars=["Group"],
+        var_name="Size",
+        value_name="value",
+    )
+    fig_bar_2 = px.bar(
+        performer_overview_chart_count,
+        x="Group",
+        y="value",
+        labels={"Group": "Gruppe", "value": "Anzahl"},
+    )
+    fig_bar_2.update_layout(plot_bgcolor="RGB(255,255,255)")
+    fig_bar.update_layout(plot_bgcolor="RGB(255,255,255)")
+    tabs = []
+    tab_content = dbc.Card(
+        dbc.CardBody(
+            [
+                dcc.Graph(figure=fig_bar),
+            ]
+        ),
+        className="mt-3",
+    )
+    tabs.append(dbc.Tab(tab_content, label="Merkmale", tab_id="Merkmale"))
+    tab_content = dbc.Card(
+        dbc.CardBody(
+            [
+                dcc.Graph(figure=fig_bar_2),
+            ]
+        ),
+        className="mt-3",
+    )
+    tabs.append(dbc.Tab(tab_content, label="Verteilung", tab_id="Verteilung"))
+
     return [
-        dbc.Table.from_dataframe(
-            performer_overview,
-            striped=True,
-            bordered=True,
-            hover=True,
-            index=True,
+        dbc.Row(
+            [
+                dbc.Col(
+                    dbc.Table.from_dataframe(
+                        performer_overview.rename(
+                            columns={"Group": "Gruppe"}
+                        ).set_index("Gruppe"),
+                        striped=True,
+                        bordered=True,
+                        hover=True,
+                        index=True,
+                    ),
+                ),
+                dbc.Col(dbc.Row(dbc.Tabs(tabs, active_tab="Merkmal"))),
+            ]
         ),
         generate_performer_group(performer, group_count),
     ]
@@ -170,7 +223,6 @@ def update_best_performer_dates(start_date, end_date, data):
 )
 def update_group_count(minus, plus, group_count):
     try:
-        print(minus, plus, group_count, input)
         changed_id = [p["prop_id"] for p in callback_context.triggered][0]
         if "indecrease-group-minus-bestperformer" in changed_id:
             if group_count["group_count"] > 0:
@@ -192,7 +244,6 @@ def update_group_count(minus, plus, group_count):
 )
 def update_feature_selection(features_selection, data):
     try:
-        print(features_selection)
 
         update_disabled = False
         if 1 in features_selection:
@@ -242,6 +293,5 @@ def update_symbol_table(add, delete, symbol, data):
     State("symbol-group-value-bestperformer", "data"),
 )
 def update_single_table(update, dates, features, group_count, symbols):
-    print("Update", symbols)
 
     return determ_best_perfomer(dates, features, group_count, symbols)

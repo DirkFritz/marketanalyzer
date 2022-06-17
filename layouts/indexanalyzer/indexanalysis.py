@@ -8,7 +8,6 @@ from db.dbqueries import date_picker_dates
 from components.symboltable import generateSymbolComponent
 from components.datepicker import generateDatePicker
 import layouts.indexanalyzer.callbacks
-from components.helper import get_index_symbols
 
 
 index_analysis = [

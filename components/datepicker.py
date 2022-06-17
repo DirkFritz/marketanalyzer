@@ -14,4 +14,5 @@ def generateDatePicker(min, max, delta_days):
         start_date=start_date.date(),
         initial_visible_month=max,
         end_date=max,
+        style={"zIndex": 10},
     )

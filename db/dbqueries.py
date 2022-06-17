@@ -11,20 +11,26 @@ def get_idx_data(start_date, end_date, symbols, ndx100_symbols):
     db = Db()
 
     stocks_db_df = historic_stock_data_date(db, start_date, ndx100_symbols)
+    db.close()
+
+    db = Db()
+
     companies = companies_data(db)
+
+    db.close()
 
     group_name = ""
     for symbol in symbols:
         group_name = group_name + symbol[0]
 
+    print("Start Performance Stock Calculation ")
     ndx_data = Index(stocks_db_df, companies, ndx100_symbols)
     ndx_data.set_comparison_group(symbols)
     if end_date > ndx_data.get_last_day():
         end_date = ndx_data.get_last_day()
 
+    print("Start Performance Index Calculation ")
     ndxgroups_df, ndxperfomrance_df = ndx_data.set_compare_dates(start_date, end_date)
-
-    db.close()
 
     return ndxgroups_df, ndxperfomrance_df
 

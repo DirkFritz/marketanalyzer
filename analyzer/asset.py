@@ -24,6 +24,7 @@ class Asset:
         df = self.companies.set_index("Symbol")
 
         for symbol in symbols_group:
+            # print(symbol)
             number_shares = df.loc[symbol]["Shares"]
             stock_prices_start = self.stocks_prices_df[
                 (self.stocks_prices_df["DateTime"] >= compare_date1)

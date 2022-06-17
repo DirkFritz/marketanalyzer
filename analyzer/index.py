@@ -33,9 +33,11 @@ class Index(Asset):
         ]
 
     def set_compare_dates(self, compare_date1, compare_date2):
-        
+
         compare_date1 = self.date_correction(compare_date1)
         compare_date2 = self.date_correction(compare_date2)
+        print(compare_date1)
+        print(compare_date2)
 
         if len(self.ticker_symbols):
             self.create_market_cap_period(

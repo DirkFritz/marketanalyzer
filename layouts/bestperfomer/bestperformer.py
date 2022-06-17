@@ -78,13 +78,10 @@ best_perfomrer = [
         },
     ),
     html.P(),
-    dbc.Row(
-        dbc.Spinner(
-            html.Div(
-                id="text-output",
-            ),
-            color="primary",
-        )
+    dbc.Spinner(
+        html.Div(id="text-output"),
+        color="primary",
+        spinner_class_name="mb-auto",
     ),
     dcc.Store(
         id="symbol-group-value-bestperformer",

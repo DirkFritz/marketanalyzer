@@ -3,7 +3,6 @@ import pandas as pd
 import numpy as np
 from sklearn.preprocessing import StandardScaler
 from sklearn.cluster import KMeans
-import matplotlib.pyplot as plt
 
 
 class BestPerformer:
@@ -14,7 +13,7 @@ class BestPerformer:
         scaler = StandardScaler()
         cluster_dataset = scaler.fit_transform(X)
 
-        #costs = []
+        # costs = []
         # for i in range(1, 12):
         #     k_means = KMeans(init="k-means++", n_clusters=i, n_init=12)
         #     k_means.fit(cluster_dataset)
@@ -27,7 +26,6 @@ class BestPerformer:
         labels = k_means.labels_
 
         data[["Performance", "Draw Down"]] = data[["Performance", "Draw Down"]].round(2)
-        print(data)
 
         labeled_data = pd.DataFrame(
             data, columns=["Symbol", "Performance", "Draw Down"]

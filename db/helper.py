@@ -15,6 +15,7 @@ def perform_split(db, data_db):
                 & (data_db["DateTime"] < split[1]["Date"]),
                 ["Close", "Open", "High", "Low"],
             ] /= split[1]["Multiple"]
+    print("Split Done")
 
 
 def companies_data(db):
@@ -58,22 +59,22 @@ def historic_stock_data_date(db, date, symbols):
         columns=["Symbol", "DateTime", "Open", "Close", "High", "Low", "Volume"]
     )
     data_db_df = pd.concat(
-            [
-                data_db_df,
-                pd.DataFrame(
-                    data_db,
-                    columns=[
-                        "Symbol",
-                        "DateTime",
-                        "Open",
-                        "Close",
-                        "High",
-                        "Low",
-                        "Volume",
-                    ],
-                ),
-            ]
-        )
+        [
+            data_db_df,
+            pd.DataFrame(
+                data_db,
+                columns=[
+                    "Symbol",
+                    "DateTime",
+                    "Open",
+                    "Close",
+                    "High",
+                    "Low",
+                    "Volume",
+                ],
+            ),
+        ]
+    )
 
     perform_split(db, data_db_df)
 

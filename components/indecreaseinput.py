@@ -31,7 +31,6 @@ def generate_in_decrease_input(comp_name):
                         className="me-1",
                     ),
                 ],
-                style={"width": "20%"},
             ),
         ],
         className="col-xs-4",

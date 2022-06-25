@@ -6,33 +6,42 @@ import pandas as pd
 from algos.bestperformer import BestPerformer
 import numpy as np
 import dash_bootstrap_components as dbc
-from components.symboltable import generateSymbolComponent, update_table
+from components.symboltable import generate_data_dable, update_table
 import plotly.express as px
+from dash.dash_table import FormatTemplate
+from components.helper import map_symbol_asset_name
 
 
 def generate_performer_group(performer, group_count):
 
     tabs = []
+    percentage = FormatTemplate.percentage(2)
+
+    performer = map_symbol_asset_name(performer)
+
+    columns = [
+        {"name": "Symbol", "id": "Symbol"},
+        {"name": "Asset", "id": "Asset"},
+        {
+            "name": "Performance",
+            "id": "Performance",
+            "type": "numeric",
+            "format": percentage,
+        },
+        {
+            "name": "Draw-Down",
+            "id": "Draw-Down",
+            "type": "numeric",
+            "format": percentage,
+        },
+    ]
     for i in range(group_count):
         performer_group = performer[performer["Labels"] == i][
-            ["Symbol", "Performance", "Draw Down"]
+            ["Symbol", "Asset", "Performance", "Draw-Down"]
         ]
 
-        performer_group = performer_group.reset_index(drop=True)
-        performer_group = performer_group.set_index("Symbol")
-
         tab_content = dbc.Card(
-            dbc.CardBody(
-                [
-                    dbc.Table.from_dataframe(
-                        performer_group,
-                        striped=True,
-                        bordered=True,
-                        hover=True,
-                        index=True,
-                    )
-                ]
-            ),
+            dbc.CardBody([generate_data_dable(performer_group, columns)]),
             className="mt-3",
         )
         tabs.append(
@@ -62,7 +71,7 @@ def generate_dataset(stocks_performance, stocks_draw_down, symbols, end_date, fe
             best_perfomrer_data_set.append([symbol, performance, draw_down])
 
     return pd.DataFrame(
-        best_perfomrer_data_set, columns=["Symbol", "Performance", "Draw Down"]
+        best_perfomrer_data_set, columns=["Symbol", "Performance", "Draw-Down"]
     )
 
 
@@ -93,7 +102,7 @@ def determ_best_perfomer(dates, features, group_count, symbols):
         )[0]
         idx_data["Symbol"] = idx_data["Symbol"].str.replace(".", " ", regex=True)
         symbols_all = symbols_all + idx_data["Symbol"].to_list()
-    symbols = list(set(symbols))
+    symbols_all = list(set(symbols_all))
 
     stock_groups, stocks_performance, stocks_draw_down = get_stock_data(
         start_date,
@@ -104,14 +113,17 @@ def determ_best_perfomer(dates, features, group_count, symbols):
     best_perfomrer_data_set = generate_dataset(
         stocks_performance, stocks_draw_down, symbols_all, end_date, features
     )
+    print(best_perfomrer_data_set)
     best_performer = BestPerformer()
     performer = best_performer.find_perfomrer(best_perfomrer_data_set, group_count)
 
     performer_overview = []
     for i in range(group_count):
-        performance_mean = performer[performer["Labels"] == i]["Performance"].mean()
-        draw_down_mean = performer[performer["Labels"] == i]["Draw Down"].mean()
-        size_group = performer[performer["Labels"] == i]["Draw Down"].shape[0]
+        performance_mean = (
+            performer[performer["Labels"] == i]["Performance"].mean() / 100
+        )
+        draw_down_mean = performer[performer["Labels"] == i]["Draw-Down"].mean() / 100
+        size_group = performer[performer["Labels"] == i]["Draw-Down"].shape[0]
 
         performer_overview.append(
             [i + 1, round(performance_mean, 2), round(draw_down_mean, 2), size_group]
@@ -122,17 +134,21 @@ def determ_best_perfomer(dates, features, group_count, symbols):
         columns=[
             "Group",
             "Performance",
-            "Draw Down",
+            "Draw-Down",
             "Size",
         ],
     )
+    performer["Performance"] = performer["Performance"] / 100
+    performer["Draw-Down"] = performer["Draw-Down"] / 100
 
     performer_overview_chart = pd.melt(
-        performer_overview[["Group", "Performance", "Draw Down"]],
+        performer_overview[["Group", "Performance", "Draw-Down"]],
         id_vars=["Group"],
         var_name="feature",
         value_name="value",
     )
+
+    performer_overview_chart["value"] = performer_overview_chart["value"] * 100
 
     fig_bar = px.bar(
         performer_overview_chart,
@@ -140,57 +156,47 @@ def determ_best_perfomer(dates, features, group_count, symbols):
         y="value",
         color="feature",
         barmode="group",
-        labels={"Group": "Grupe", "value": "Prozent", "feature": "Merkmal"},
+        labels={"Group": "Gruppe", "value": "Prozent", "feature": "Merkmal"},
     )
-    performer_overview_chart_count = pd.melt(
-        performer_overview[["Group", "Size"]],
-        id_vars=["Group"],
-        var_name="Size",
-        value_name="value",
-    )
-    fig_bar_2 = px.bar(
-        performer_overview_chart_count,
-        x="Group",
-        y="value",
-        labels={"Group": "Gruppe", "value": "Anzahl"},
-    )
-    fig_bar_2.update_layout(plot_bgcolor="RGB(255,255,255)")
     fig_bar.update_layout(plot_bgcolor="RGB(255,255,255)")
-    tabs = []
-    tab_content = dbc.Card(
-        dbc.CardBody(
-            [
-                dcc.Graph(figure=fig_bar),
-            ]
-        ),
-        className="mt-3",
-    )
-    tabs.append(dbc.Tab(tab_content, label="Merkmale", tab_id="Merkmale"))
-    tab_content = dbc.Card(
-        dbc.CardBody(
-            [
-                dcc.Graph(figure=fig_bar_2),
-            ]
-        ),
-        className="mt-3",
-    )
-    tabs.append(dbc.Tab(tab_content, label="Verteilung", tab_id="Verteilung"))
+
+    percentage = FormatTemplate.percentage(2)
+
+    columns = [
+        {
+            "name": "Gruppe",
+            "id": "Group",
+            "type": "numeric",
+        },
+        {
+            "name": "Gruppengröße",
+            "id": "Size",
+            "type": "numeric",
+        },
+        {
+            "name": "Performance",
+            "id": "Performance",
+            "type": "numeric",
+            "format": percentage,
+        },
+        {
+            "name": "Draw-Down",
+            "id": "Draw-Down",
+            "type": "numeric",
+            "format": percentage,
+        },
+    ]
 
     return [
         dbc.Row(
             [
                 dbc.Col(
-                    dbc.Table.from_dataframe(
-                        performer_overview.rename(
-                            columns={"Group": "Gruppe"}
-                        ).set_index("Gruppe"),
-                        striped=True,
-                        bordered=True,
-                        hover=True,
-                        index=True,
-                    ),
+                    generate_data_dable(
+                        performer_overview,
+                        columns,
+                    )
                 ),
-                dbc.Col(dbc.Row(dbc.Tabs(tabs, active_tab="Merkmal"))),
+                dbc.Col(dcc.Graph(figure=fig_bar)),
             ]
         ),
         generate_performer_group(performer, group_count),

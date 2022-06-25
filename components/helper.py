@@ -1,4 +1,7 @@
+from lib2to3.pygram import Symbols
 import pandas as pd
+from db.helper import companies_data
+from db.db import Db
 
 
 def get_index_symbols(ndx):
@@ -16,3 +19,17 @@ def get_index_symbols(ndx):
         idx_symbols = idx_data["Symbol"].to_list()
 
     return idx_symbols
+
+
+def map_symbol_asset_name(data):
+    db = Db()
+    companies = companies_data(db)
+
+    data["Asset"] = ""
+    data = data.sort_values(["Symbol"]).reset_index(drop=True)
+    assets = companies[companies["Symbol"].isin(data["Symbol"])]
+    assets = assets.sort_values(["Symbol"]).reset_index(drop=True)
+    data["Asset"] = assets["Name"]
+
+    db.close()
+    return data

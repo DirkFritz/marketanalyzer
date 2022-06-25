@@ -8,7 +8,7 @@ from sklearn.cluster import KMeans
 class BestPerformer:
     def find_perfomrer(self, data, group_no):
 
-        X = data[["Performance", "Draw Down"]].to_numpy()
+        X = data[["Performance", "Draw-Down"]].to_numpy()
         X = np.nan_to_num(X)
         scaler = StandardScaler()
         cluster_dataset = scaler.fit_transform(X)
@@ -25,10 +25,10 @@ class BestPerformer:
         k_means.fit(cluster_dataset)
         labels = k_means.labels_
 
-        data[["Performance", "Draw Down"]] = data[["Performance", "Draw Down"]].round(2)
+        data[["Performance", "Draw-Down"]] = data[["Performance", "Draw-Down"]].round(2)
 
         labeled_data = pd.DataFrame(
-            data, columns=["Symbol", "Performance", "Draw Down"]
+            data, columns=["Symbol", "Performance", "Draw-Down"]
         )
         labeled_data["Labels"] = labels
 

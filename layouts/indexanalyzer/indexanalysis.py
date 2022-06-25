@@ -5,7 +5,7 @@ from dash import (
 import dash_bootstrap_components as dbc
 from db.dbqueries import date_picker_dates
 
-from components.symboltable import generateSymbolComponent
+
 from components.datepicker import generateDatePicker
 import layouts.indexanalyzer.callbacks
 
@@ -57,15 +57,21 @@ index_analysis = [
         # links_left=True,
     ),
     html.Div(generateDatePicker(*date_picker_dates(), 30)),
-    html.P(
-        dbc.Spinner(
-            html.Div(dbc.Tabs(id="markectcap_percent", active_tab="Zeit")),
-            color="primary",
-        )
+    html.P(),
+    dbc.Spinner(
+        html.Div(
+            id="markectcap_percent",
+        ),
+        color="primary",
+        spinner_class_name="mb-auto",
+        delay_show=100,
     ),
-    dbc.Col(generateSymbolComponent("")),
-    dbc.Col(
-        generateSymbolComponent("-single"),
+    html.Div(
+        id="indexchart-groups",
+        children=[
+            dbc.Row(id="symbol-group-udpate-single"),
+            dbc.Row(id="symbol-group-udpate"),
+        ],
     ),
     dcc.Store(
         id="symbol-group-value",

@@ -1,13 +1,9 @@
-from dash import (
-    Input,
-    Output,
-    callback,
-    callback_context,
-    State,
-)
+from dash import Input, Output, callback, callback_context, State, html, no_update
 
 from components.symboltable import update_table
-from components.indexcharts import generateIndexGraph
+
+from components.indexcharts import generateIndexGraph, generate_update_groups
+from dash.exceptions import PreventUpdate
 
 
 @callback(
@@ -136,6 +132,11 @@ def update_ndx_market_cap(
     data_single,
 ):
     try:
+        changed_id = [p["prop_id"] for p in callback_context.triggered][0]
+        value_cb_context = [p["value"] for p in callback_context.triggered][0]
+        print("Callback Update", changed_id, value_cb_context)
+        if value_cb_context == None and "symbol-group-udpate" in changed_id:
+            return no_update
 
         graph = generateIndexGraph(
             start_date,
@@ -150,3 +151,21 @@ def update_ndx_market_cap(
         return None
 
     return graph
+
+
+@callback(
+    Output("indexchart-groups", "children"), [Input("indexchart-tabs", "active_tab")]
+)
+def update_indexchart_tab(active_tab):
+    print("Callback Tabs ", active_tab)
+    if active_tab == "Zeit":
+        return generate_update_groups()
+    return (
+        html.Div(
+            id="indexchart-groups",
+            children=[
+                html.Div(id="symbol-group-udpate-single"),
+                html.Div(id="symbol-group-udpate"),
+            ],
+        ),
+    )

@@ -2,9 +2,10 @@ import layouts.indexanalyzer.indexanalysis as indexanalysis
 import layouts.bestperfomer.bestperformer as bestperformer
 import dash_bootstrap_components as dbc
 from dash import dcc, callback, Input, Output, html
+from components.symboltable import generateSymbolComponent
 
 
-index_analysis_layout = dbc.Row(indexanalysis.index_analysis)
+index_analysis_layout = dbc.Row([indexanalysis.index_analysis])
 
 best_performer_layout = dbc.Row(bestperformer.best_perfomrer)
 

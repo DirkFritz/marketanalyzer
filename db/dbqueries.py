@@ -31,6 +31,7 @@ def get_idx_data(start_date, end_date, symbols, ndx100_symbols):
 
     print("Start Performance Index Calculation ")
     ndxgroups_df, ndxperfomrance_df = ndx_data.set_compare_dates(start_date, end_date)
+    ndxgroups_df.loc[ndxgroups_df["Group"] == "MANTA", "Group"] = group_name
 
     return ndxgroups_df, ndxperfomrance_df
 
@@ -50,7 +51,7 @@ def get_stock_data(start_date, end_date, symbols_single):
     stock_analyzer = Stock(stocks_db_df, companies, symbols_single)
 
     if stocks_db_df.empty:
-        return pd.DataFrame(), pd.DataFrame()
+        return pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
 
     if end_date > stock_analyzer.get_last_day():
         end_date = stock_analyzer.get_last_day()
@@ -58,7 +59,6 @@ def get_stock_data(start_date, end_date, symbols_single):
     stock_groups, stock_single = stock_analyzer.set_compare_dates(
         start_date, end_date, symbols_single
     )
-
     draw_downs = stock_analyzer.get_max_draw_down(start_date, end_date, symbols_single)
 
     return stock_groups, stock_single, draw_downs
@@ -85,3 +85,5 @@ def date_picker_dates():
     db.close()
 
     return min, max
+
+def 

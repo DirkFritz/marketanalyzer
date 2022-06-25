@@ -22,6 +22,7 @@ best_perfomrer = [
                     dbc.Label(
                         "Aktien/Aktiengruppen wählen",
                     ),
+                    html.P(),
                     generateSymbolComponent(
                         "-bestperformer", ["NDX", "SPX"], ["NDX", "SPX"]
                     ),
@@ -38,7 +39,7 @@ best_perfomrer = [
                             dbc.Checklist(
                                 options=[
                                     {"label": "Performance", "value": 1},
-                                    {"label": "Draw Down", "value": 2},
+                                    {"label": "Draw-Down", "value": 2},
                                 ],
                                 value=[1, 2],
                                 id="best-performer-features-switch",

@@ -4,10 +4,25 @@ from dash import (
 import dash_bootstrap_components as dbc
 from datetime import datetime
 import plotly.express as px
+from components.symboltable import generate_data_dable, generateSymbolComponent
 from db.dbqueries import get_idx_data, get_stock_data
 import pandas as pd
 from components.heatmap import generateHeatmap
-from components.helper import get_index_symbols
+from components.helper import get_index_symbols, map_symbol_asset_name
+from dash.dash_table import FormatTemplate
+
+
+def generate_update_groups():
+    return (
+        dbc.Row(
+            [
+                dbc.Col(generateSymbolComponent("")),
+                dbc.Col(
+                    generateSymbolComponent("-single"),
+                ),
+            ]
+        ),
+    )
 
 
 def generateIndexGraph(
@@ -28,7 +43,7 @@ def generateIndexGraph(
         start_date.date(), end_date.date(), symbols, idx_symbols
     )
 
-    stockgroups, stocks = get_stock_data(
+    stockgroups, stocks, draw_downs = get_stock_data(
         start_date.date(), end_date.date(), symbols_single
     )
 
@@ -90,8 +105,64 @@ def generateIndexGraph(
         fig_bar.update_layout(plot_bgcolor="RGB(255,255,255)")
         fig_heat.update_layout(plot_bgcolor="RGB(255,255,255)")
 
-    return [
-        dbc.Tab(dcc.Graph(figure=fig_line), tab_id="Zeit", label="Zeit"),
-        dbc.Tab(dcc.Graph(figure=fig_bar), tab_id="Absolut", label="Absolut"),
-        dbc.Tab(dcc.Graph(figure=fig_heat), tab_id="Heat", label="Heatmap"),
+    stocks_performance_df = ndxperfomrance_df[
+        ["Symbol", "Open", "High", "Low", "Close", "Percent", "Volume"]
     ]
+
+    stocks_performance_df["Percent"] = pd.to_numeric(stocks_performance_df["Percent"])
+    stocks_performance_df["Percent"] = stocks_performance_df["Percent"].round(2) / 100
+
+    stocks_performance_df = stocks_performance_df.rename(
+        columns={"Percent": "Performance"}
+    )
+
+    stocks_performance_df = map_symbol_asset_name(stocks_performance_df)
+
+    money = FormatTemplate.money(2)
+    percentage = FormatTemplate.percentage(2)
+
+    columns = [
+        {"name": "Symbol", "id": "Symbol"},
+        {"name": "Asset", "id": "Asset"},
+        {"name": "Open", "id": "Open", "type": "numeric", "format": money},
+        {"name": "High", "id": "High", "type": "numeric", "format": money},
+        {"name": "Low", "id": "Low", "type": "numeric", "format": money},
+        {"name": "Close", "id": "Close", "type": "numeric", "format": money},
+        {
+            "name": "Performance",
+            "id": "Performance",
+            "type": "numeric",
+            "format": percentage,
+        },
+        {"name": "Volume", "id": "Volume", "type": "numeric"},
+    ]
+
+    return dbc.Tabs(
+        id="indexchart-tabs",
+        active_tab="Zeit",
+        children=[
+            dbc.Tab(
+                [
+                    dcc.Graph(figure=fig_line),
+                ],
+                tab_id="Zeit",
+                label="Zeit",
+            ),
+            dbc.Tab(
+                [
+                    dbc.Row(dcc.Graph(figure=fig_bar)),
+                    dbc.Row(generate_data_dable(stocks_performance_df, columns)),
+                ],
+                tab_id="Absolut",
+                label="Absolut",
+            ),
+            dbc.Tab(
+                [
+                    dbc.Row(dcc.Graph(figure=fig_heat)),
+                    dbc.Row(generate_data_dable(stocks_performance_df, columns)),
+                ],
+                tab_id="Heat",
+                label="Heatmap",
+            ),
+        ],
+    )

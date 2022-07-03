@@ -33,6 +33,8 @@ def get_idx_data(start_date, end_date, symbols, ndx100_symbols):
     ndxgroups_df, ndxperfomrance_df = ndx_data.set_compare_dates(start_date, end_date)
     ndxgroups_df.loc[ndxgroups_df["Group"] == "MANTA", "Group"] = group_name
 
+    print(ndxgroups_df)
+
     return ndxgroups_df, ndxperfomrance_df
 
 
@@ -85,5 +87,3 @@ def date_picker_dates():
     db.close()
 
     return min, max
-
-def 

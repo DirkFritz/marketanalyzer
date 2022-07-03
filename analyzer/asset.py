@@ -1,5 +1,6 @@
 import pandas as pd
 import datetime
+import numpy as np
 
 
 class Asset:
@@ -15,7 +16,13 @@ class Asset:
         self.ticker_symbols = []
 
         self.market_cap_period_groups = pd.DataFrame(
-            columns=["Group", "DateTime", "Market Cap", "Percent", "Average Percent"]
+            columns=[
+                "Group",
+                "DateTime",
+                "Market Cap",
+                "Percent",
+                "Winner Period",
+            ]
         )
 
     def create_market_cap_period(
@@ -41,6 +48,16 @@ class Asset:
             price_per_stock.loc[:, "Percent"] = (
                 price_per_stock["Close"] / stock_prices_start.values[0]
             ) * 100 - 100
+
+            num_prices = len(stock_prices_start.values)
+            stock_prices_previous_day = np.ones(num_prices)
+            stock_prices_previous_day[1:num_prices] = stock_prices_start.values[
+                0 : num_prices - 1
+            ]
+            price_per_stock.loc[:, "Winner Period"] = 0
+
+            price_per_stock.loc[price_per_stock["Percent"] >= 0, "Winner Period"] = 1
+
             price_per_stock["Group"] = group_name
 
             self.market_cap_period_df = pd.concat(
@@ -61,13 +78,33 @@ class Asset:
                 group_per_date["Symbol"].unique()
             )
 
-            data_record = [[group_name, date, market_cap, percent_average]]
+            winners_period = (
+                group_per_date["Winner Period"].sum()
+                / len(group_per_date["Symbol"].unique())
+                * 100
+            )
+
+            data_record = [
+                [
+                    group_name,
+                    date,
+                    market_cap,
+                    percent_average,
+                    winners_period,
+                ]
+            ]
             self.market_cap_period_groups = pd.concat(
                 [
                     self.market_cap_period_groups,
                     pd.DataFrame(
                         data_record,
-                        columns=["Group", "DateTime", "Market Cap", "Average Percent"],
+                        columns=[
+                            "Group",
+                            "DateTime",
+                            "Market Cap",
+                            "Average Percent",
+                            "Winner Period",
+                        ],
                     ),
                 ]
             )

@@ -15,4 +15,5 @@ def generateDatePicker(min, max, delta_days):
         initial_visible_month=max,
         end_date=max,
         style={"zIndex": 10},
+        persistence=True,
     )

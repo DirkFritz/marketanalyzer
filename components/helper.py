@@ -30,6 +30,7 @@ def map_symbol_asset_name(data):
     assets = companies[companies["Symbol"].isin(data["Symbol"])]
     assets = assets.sort_values(["Symbol"]).reset_index(drop=True)
     data["Asset"] = assets["Name"]
+    data["Sector"] = assets["Sector"]
 
     db.close()
     return data

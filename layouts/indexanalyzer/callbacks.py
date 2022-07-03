@@ -112,6 +112,7 @@ def update_single_table(add, delete, symbol, data):
 
 @callback(
     Output("markectcap_percent", "children"),
+    Output("index-analyzer-store", "data"),
     Input("my-date-picker-range", "start_date"),
     Input("my-date-picker-range", "end_date"),
     Input("index_perfromance_market_cap", "active"),
@@ -120,6 +121,8 @@ def update_single_table(add, delete, symbol, data):
     Input("symbol-group-udpate", "n_clicks"),
     State("symbol-group-value", "data"),
     State("symbol-group-value-single", "data"),
+    State("index-analyzer-store", "data"),
+    State("index-analyzer-tabs-store", "data"),
 )
 def update_ndx_market_cap(
     start_date,
@@ -130,36 +133,44 @@ def update_ndx_market_cap(
     update_single,
     data,
     data_single,
+    data_stored,
+    tabs_store,
 ):
     try:
         changed_id = [p["prop_id"] for p in callback_context.triggered][0]
         value_cb_context = [p["value"] for p in callback_context.triggered][0]
-        print("Callback Update", changed_id, value_cb_context)
+        # print("Callback Update", changed_id, value_cb_context)
         if value_cb_context == None and "symbol-group-udpate" in changed_id:
             return no_update
 
-        graph = generateIndexGraph(
+        graph, data_stored = generateIndexGraph(
             start_date,
             end_date,
             market_cap_active,
             index_ndx100_active,
             data["Symbol"],
             data_single["Symbol"],
+            data_stored,
+            tabs_store,
         )
     except Exception as e:
         print(e)
         return None
 
-    return graph
+    return graph, data_stored
 
 
 @callback(
-    Output("indexchart-groups", "children"), [Input("indexchart-tabs", "active_tab")]
+    Output("indexchart-groups", "children"),
+    Output("index-analyzer-tabs-store", "data"),
+    Input("indexchart-tabs", "active_tab"),
+    State("index-analyzer-tabs-store", "data"),
 )
-def update_indexchart_tab(active_tab):
+def update_indexchart_tab(active_tab, tabs_store):
     print("Callback Tabs ", active_tab)
+    tabs_store["ActiveTab"] = active_tab
     if active_tab == "Zeit":
-        return generate_update_groups()
+        return generate_update_groups(), tabs_store
     return (
         html.Div(
             id="indexchart-groups",
@@ -168,4 +179,4 @@ def update_indexchart_tab(active_tab):
                 html.Div(id="symbol-group-udpate"),
             ],
         ),
-    )
+    ), tabs_store

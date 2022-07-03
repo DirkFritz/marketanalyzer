@@ -85,4 +85,21 @@ index_analysis = [
             "Symbol": [],
         },
     ),
+    dcc.Store(
+        id="index-analyzer-store",
+        data={
+            "Idx Performance": {},
+            "Idx Groups": {},
+            "Stocks": {},
+            "Dates": ["", ""],
+        },
+        storage_type="session",
+    ),
+    dcc.Store(
+        id="index-analyzer-tabs-store",
+        data={
+            "ActiveTab": "Zeit",
+        },
+        storage_type="session",
+    ),
 ]

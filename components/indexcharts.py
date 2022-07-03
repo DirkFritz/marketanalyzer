@@ -1,6 +1,4 @@
-from dash import (
-    dcc,
-)
+from dash import dcc, html
 import dash_bootstrap_components as dbc
 from datetime import datetime
 import plotly.express as px
@@ -10,6 +8,7 @@ import pandas as pd
 from components.heatmap import generateHeatmap
 from components.helper import get_index_symbols, map_symbol_asset_name
 from dash.dash_table import FormatTemplate
+from io import StringIO
 
 
 def generate_update_groups():
@@ -32,6 +31,8 @@ def generateIndexGraph(
     index_ndx100_active,
     symbols,
     symbols_single,
+    data_stored,
+    tabs_store,
 ):
     end_date = datetime.strptime(end_date + " 16:00:00", "%Y-%m-%d %H:%M:%S")
     start_date = datetime.strptime(start_date + " 00:00:00", "%Y-%m-%d %H:%M:%S")
@@ -39,13 +40,36 @@ def generateIndexGraph(
     idx_symbols = get_index_symbols(index_ndx100_active)
 
     symbols = [symbol for symbol in symbols if symbol in idx_symbols]
-    ndxgroups_df, ndxperfomrance_df = get_idx_data(
-        start_date.date(), end_date.date(), symbols, idx_symbols
-    )
 
-    stockgroups, stocks, draw_downs = get_stock_data(
-        start_date.date(), end_date.date(), symbols_single
-    )
+    ndxgroups_df = None
+    ndxperfomrance_df = None
+    stocks = None
+
+    if (
+        data_stored["Dates"][0] == str(start_date.date())
+        and data_stored["Dates"][1] == str(end_date.date())
+        and data_stored["Index"] == index_ndx100_active
+    ):
+        print("Saved Data")
+        ndxgroups_df = pd.read_csv(StringIO(data_stored["Idx Groups"]))
+        ndxperfomrance_df = pd.read_csv(StringIO(data_stored["Idx Performance"]))
+        stocks = pd.read_csv(StringIO(data_stored["Stocks"]))
+        ndxgroups_df["DateTime"] = pd.to_datetime(ndxgroups_df["DateTime"]).dt.date
+        if stocks.empty == False:
+            stocks["DateTime"] = pd.to_datetime(stocks["DateTime"]).dt.date
+    else:
+        ndxgroups_df, ndxperfomrance_df = get_idx_data(
+            start_date.date(), end_date.date(), symbols, idx_symbols
+        )
+
+        stockgroups, stocks, draw_downs = get_stock_data(
+            start_date.date(), end_date.date(), symbols_single
+        )
+        data_stored["Dates"] = [start_date.date(), end_date.date()]
+        data_stored["Index"] = index_ndx100_active
+        data_stored["Idx Groups"] = ndxgroups_df.to_csv()
+        data_stored["Idx Performance"] = ndxperfomrance_df.to_csv()
+        data_stored["Stocks"] = stocks.to_csv()
 
     selection_df = ndxgroups_df[
         (ndxgroups_df["DateTime"] >= start_date.date())
@@ -66,6 +90,22 @@ def generateIndexGraph(
 
     fig_line = None
     fig_bar = None
+
+    selection_all = selection_df[selection_df["Group"] == "ALL"]
+
+    selection_all = selection_all[
+        selection_all["DateTime"] > selection_all["DateTime"].min()
+    ]
+
+    fig_line_winners_period = px.line(
+        selection_all,
+        x="DateTime",
+        y="Winner Period",
+        labels={"DateTime": "Zeit", "Winner Period": "Gewinner/Verlierer Prozent"},
+        height=250,
+    )
+
+    fig_line_winners_period.update_layout(plot_bgcolor="RGB(255,255,255)")
 
     if market_cap_active:
         fig_line = px.line(
@@ -124,9 +164,6 @@ def generateIndexGraph(
     columns = [
         {"name": "Symbol", "id": "Symbol"},
         {"name": "Asset", "id": "Asset"},
-        {"name": "Open", "id": "Open", "type": "numeric", "format": money},
-        {"name": "High", "id": "High", "type": "numeric", "format": money},
-        {"name": "Low", "id": "Low", "type": "numeric", "format": money},
         {"name": "Close", "id": "Close", "type": "numeric", "format": money},
         {
             "name": "Performance",
@@ -134,35 +171,39 @@ def generateIndexGraph(
             "type": "numeric",
             "format": percentage,
         },
-        {"name": "Volume", "id": "Volume", "type": "numeric"},
+        {"name": "GICS Sektor", "id": "Sector"},
     ]
 
-    return dbc.Tabs(
-        id="indexchart-tabs",
-        active_tab="Zeit",
-        children=[
-            dbc.Tab(
-                [
-                    dcc.Graph(figure=fig_line),
-                ],
-                tab_id="Zeit",
-                label="Zeit",
-            ),
-            dbc.Tab(
-                [
-                    dbc.Row(dcc.Graph(figure=fig_bar)),
-                    dbc.Row(generate_data_dable(stocks_performance_df, columns)),
-                ],
-                tab_id="Absolut",
-                label="Absolut",
-            ),
-            dbc.Tab(
-                [
-                    dbc.Row(dcc.Graph(figure=fig_heat)),
-                    dbc.Row(generate_data_dable(stocks_performance_df, columns)),
-                ],
-                tab_id="Heat",
-                label="Heatmap",
-            ),
-        ],
+    return (
+        dbc.Tabs(
+            id="indexchart-tabs",
+            active_tab=tabs_store["ActiveTab"],
+            children=[
+                dbc.Tab(
+                    [
+                        dcc.Graph(figure=fig_line),
+                        dcc.Graph(figure=fig_line_winners_period),
+                    ],
+                    tab_id="Zeit",
+                    label="Zeit",
+                ),
+                dbc.Tab(
+                    [
+                        dbc.Row(dcc.Graph(figure=fig_bar)),
+                        dbc.Row(generate_data_dable(stocks_performance_df, columns)),
+                    ],
+                    tab_id="Absolut",
+                    label="Absolut",
+                ),
+                dbc.Tab(
+                    [
+                        dbc.Row(dcc.Graph(figure=fig_heat)),
+                        dbc.Row(generate_data_dable(stocks_performance_df, columns)),
+                    ],
+                    tab_id="Heat",
+                    label="Heatmap",
+                ),
+            ],
+        ),
+        data_stored,
     )

@@ -34,14 +34,27 @@ def generate_performer_group(performer, group_count):
             "type": "numeric",
             "format": percentage,
         },
+        {"name": "GICS Sektor", "id": "Sector"},
     ]
+
     for i in range(group_count):
         performer_group = performer[performer["Labels"] == i][
-            ["Symbol", "Asset", "Performance", "Draw-Down"]
+            ["Symbol", "Asset", "Performance", "Draw-Down", "Sector"]
         ]
+        performer_group_sector_count = (
+            performer_group["Sector"].value_counts().reset_index()
+        )
+        fig_pie = px.pie(performer_group_sector_count, values="Sector", names="index")
 
         tab_content = dbc.Card(
-            dbc.CardBody([generate_data_dable(performer_group, columns)]),
+            dbc.CardBody(
+                dbc.Row(
+                    [
+                        dbc.Col(generate_data_dable(performer_group, columns), width=7),
+                        dbc.Col(dcc.Graph(figure=fig_pie), width=5),
+                    ]
+                )
+            ),
             className="mt-3",
         )
         tabs.append(
@@ -65,6 +78,7 @@ def generate_dataset(stocks_performance, stocks_draw_down, symbols, end_date, fe
             performance = 0.0
 
             if features["performance"]:
+                # print([stock["DateTime"] == end_date], end_date)
                 performance = stock[stock["DateTime"] == end_date]["Percent"].values[0]
             if features["draw_down"]:
                 draw_down = stocks_draw_down[symbol]
@@ -113,7 +127,7 @@ def determ_best_perfomer(dates, features, group_count, symbols):
     best_perfomrer_data_set = generate_dataset(
         stocks_performance, stocks_draw_down, symbols_all, end_date, features
     )
-    print(best_perfomrer_data_set)
+    # print(best_perfomrer_data_set)
     best_performer = BestPerformer()
     performer = best_performer.find_perfomrer(best_perfomrer_data_set, group_count)
 

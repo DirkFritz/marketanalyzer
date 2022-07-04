@@ -23,13 +23,16 @@ def generateHeatmap(stocks_single_df):
         row = []
         labels_row = []
         for j in range(heatmap_size):
-            performance = performance_stocks.values[i * heatmap_size + j]
-            performance_str = f"{performance:.2f}"
+            index = i * heatmap_size + j
+            if index < len(performance_stocks.values):
+                performance = performance_stocks.values[index]
+                performance_str = f"{performance:.2f}"
 
-            row.append(performance)
-            labels_row.append(
-                labels_stocks.values[i * heatmap_size + j] + " " + performance_str
-            )
+                row.append(performance)
+                labels_row.append(labels_stocks.values[index] + " " + performance_str)
+            else:
+                row.append(0)
+                labels_row.append("-")
 
         performance_heatmap.append(row)
         labels_heatmap.append(labels_row)

@@ -123,6 +123,7 @@ def update_single_table(add, delete, symbol, data):
     State("symbol-group-value-single", "data"),
     State("index-analyzer-store", "data"),
     State("index-analyzer-tabs-store", "data"),
+    State("index-analyzer-sector-store","data")
 )
 def update_ndx_market_cap(
     start_date,
@@ -135,6 +136,7 @@ def update_ndx_market_cap(
     data_single,
     data_stored,
     tabs_store,
+    sector_store
 ):
     try:
         changed_id = [p["prop_id"] for p in callback_context.triggered][0]
@@ -152,6 +154,7 @@ def update_ndx_market_cap(
             data_single["Symbol"],
             data_stored,
             tabs_store,
+            sector_store
         )
     except Exception as e:
         print(e)

@@ -3,7 +3,7 @@ import dash_bootstrap_components as dbc
 from datetime import datetime
 import plotly.express as px
 from components.symboltable import generate_data_dable, generateSymbolComponent
-from db.dbqueries import get_idx_data, get_stock_data
+from db.dbqueries import get_idx_data, get_stock_data, get_sectors
 import pandas as pd
 from components.heatmap import generateHeatmap
 from components.helper import get_index_symbols, map_symbol_asset_name
@@ -15,7 +15,17 @@ def generate_update_groups():
     return (
         dbc.Row(
             [
-                dbc.Col(generateSymbolComponent("")),
+                dbc.Col(
+                    [
+                        dcc.Dropdown(
+                            id="sector-input-indecxhart",
+                            options=get_sectors(),
+                            value="Technology",
+                        ),
+                        html.P(),
+                        generateSymbolComponent(""),
+                    ]
+                ),
                 dbc.Col(
                     generateSymbolComponent("-single"),
                 ),
@@ -33,6 +43,7 @@ def generateIndexGraph(
     symbols_single,
     data_stored,
     tabs_store,
+    sector_store,
 ):
     end_date = datetime.strptime(end_date + " 16:00:00", "%Y-%m-%d %H:%M:%S")
     start_date = datetime.strptime(start_date + " 00:00:00", "%Y-%m-%d %H:%M:%S")
@@ -59,7 +70,7 @@ def generateIndexGraph(
             stocks["DateTime"] = pd.to_datetime(stocks["DateTime"]).dt.date
     else:
         ndxgroups_df, ndxperfomrance_df = get_idx_data(
-            start_date.date(), end_date.date(), symbols, idx_symbols
+            start_date.date(), end_date.date(), symbols, idx_symbols, sector_store
         )
 
         stockgroups, stocks, draw_downs = get_stock_data(
@@ -92,20 +103,39 @@ def generateIndexGraph(
     fig_bar = None
 
     selection_all = selection_df[selection_df["Group"] == "ALL"]
+    selection_all = selection_all.rename(
+        columns={"Winner Period": "Gewinner/Verlierer", "Volume Percent": "Volumen"}
+    )
 
-    selection_all = selection_all[
-        selection_all["DateTime"] > selection_all["DateTime"].min()
-    ]
+    # selection_all = selection_all[
+    #    selection_all["DateTime"] > selection_all["DateTime"].min()
+    # ]
+
+    index_data = pd.melt(
+        selection_all[["DateTime", "Gewinner/Verlierer", "Volumen"]],
+        id_vars=["DateTime"],
+        var_name="feature",
+        value_name="value",
+    )
+    # print(index_data)
 
     fig_line_winners_period = px.line(
-        selection_all,
+        index_data,
         x="DateTime",
-        y="Winner Period",
-        labels={"DateTime": "Zeit", "Winner Period": "Gewinner/Verlierer Prozent"},
+        y="value",
+        color="feature",
+        labels={
+            "DateTime": "Zeit",
+            "value": "Prozent",
+            "feature": "Indexdaten",
+        },
         height=250,
     )
 
     fig_line_winners_period.update_layout(plot_bgcolor="RGB(255,255,255)")
+    fig_line_winners_period.update_layout(
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+    )
 
     if market_cap_active:
         fig_line = px.line(
@@ -113,7 +143,7 @@ def generateIndexGraph(
             x="DateTime",
             y="Percent",
             color="Group",
-            labels={"DateTime": "Zeit", "Percent": "Prozent"},
+            labels={"Group": "Gruppe", "DateTime": "Zeit", "Percent": "Prozent"},
         )
         fig_line.update_layout(plot_bgcolor="RGB(255,255,255)")
         fig_bar = px.bar(
@@ -145,6 +175,10 @@ def generateIndexGraph(
         fig_bar.update_layout(plot_bgcolor="RGB(255,255,255)")
         fig_heat.update_layout(plot_bgcolor="RGB(255,255,255)")
 
+    fig_line.update_layout(
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+    )
+
     stocks_performance_df = ndxperfomrance_df[
         ["Symbol", "Open", "High", "Low", "Close", "Percent", "Volume"]
     ]
@@ -172,6 +206,7 @@ def generateIndexGraph(
             "format": percentage,
         },
         {"name": "GICS Sektor", "id": "Sector"},
+        {"name": "Industrie", "id": "Industry"},
     ]
 
     return (

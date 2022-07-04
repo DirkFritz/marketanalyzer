@@ -7,6 +7,7 @@ def perform_split(db, data_db):
     symbols = splits["Symbol"].unique()
 
     print(splits)
+
     for symbol in symbols:
         splits_per_symbol = splits[splits["Symbol"] == symbol]
         for split in splits_per_symbol.iterrows():
@@ -15,6 +16,13 @@ def perform_split(db, data_db):
                 & (data_db["DateTime"] < split[1]["Date"]),
                 ["Close", "Open", "High", "Low"],
             ] /= split[1]["Multiple"]
+
+            data_db.loc[
+                (data_db["Symbol"] == symbol)
+                & (data_db["DateTime"] < split[1]["Date"]),
+                ["Volume"],
+            ] *= split[1]["Multiple"]
+
     print("Split Done")
 
 

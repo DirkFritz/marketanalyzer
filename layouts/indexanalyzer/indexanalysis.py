@@ -3,7 +3,7 @@ from dash import (
     html,
 )
 import dash_bootstrap_components as dbc
-from db.dbqueries import date_picker_dates
+from db.dbqueries import date_picker_dates, get_sectors
 
 
 from components.datepicker import generateDatePicker
@@ -69,6 +69,7 @@ index_analysis = [
     html.Div(
         id="indexchart-groups",
         children=[
+            dbc.Row(id="sector-input-indecxhart"),
             dbc.Row(id="symbol-group-udpate-single"),
             dbc.Row(id="symbol-group-udpate"),
         ],
@@ -99,6 +100,13 @@ index_analysis = [
         id="index-analyzer-tabs-store",
         data={
             "ActiveTab": "Zeit",
+        },
+        storage_type="session",
+    ),
+    dcc.Store(
+        id="index-analyzer-sector-store",
+        data={
+            "Sector": "Technology",
         },
         storage_type="session",
     ),

@@ -31,6 +31,9 @@ def map_symbol_asset_name(data):
     assets = assets.sort_values(["Symbol"]).reset_index(drop=True)
     data["Asset"] = assets["Name"]
     data["Sector"] = assets["Sector"]
+    data["Industry"] = assets["Industry"]
+
+    data.loc[data["Sector"] == "", "Sector"] = "N/A"
 
     db.close()
     return data

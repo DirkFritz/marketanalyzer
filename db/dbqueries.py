@@ -7,7 +7,7 @@ from analyzer.index import Index
 from analyzer.stock import Stock
 
 
-def get_idx_data(start_date, end_date, symbols, ndx100_symbols):
+def get_idx_data(start_date, end_date, symbols, ndx100_symbols, sector):
     db = Db()
 
     stocks_db_df = historic_stock_data_date(db, start_date, ndx100_symbols)
@@ -25,7 +25,7 @@ def get_idx_data(start_date, end_date, symbols, ndx100_symbols):
 
     print("Start Performance Stock Calculation ")
     ndx_data = Index(stocks_db_df, companies, ndx100_symbols)
-    ndx_data.set_comparison_group(symbols)
+    ndx_data.set_comparison_group(symbols, sector)
     if end_date > ndx_data.get_last_day():
         end_date = ndx_data.get_last_day()
 
@@ -33,7 +33,7 @@ def get_idx_data(start_date, end_date, symbols, ndx100_symbols):
     ndxgroups_df, ndxperfomrance_df = ndx_data.set_compare_dates(start_date, end_date)
     ndxgroups_df.loc[ndxgroups_df["Group"] == "MANTA", "Group"] = group_name
 
-    print(ndxgroups_df)
+    # print(ndxgroups_df)
 
     return ndxgroups_df, ndxperfomrance_df
 
@@ -79,6 +79,17 @@ def get_symbols(allowed_symbols=[], custom_symbols=[]):
     symbols = symbols + custom_symbols
 
     return symbols
+
+
+def get_sectors():
+    db = Db()
+    data_db = db.get_unique_values("sector", "companies")
+
+    db.close()
+
+    sectors = [sector[0] for sector in data_db]
+
+    return sectors
 
 
 def date_picker_dates():

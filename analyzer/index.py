@@ -9,11 +9,12 @@ pd.options.mode.chained_assignment = None  # default='warn'
 class Index(Asset):
     def __init__(self, stocks_db_df, companies, symbols_stocks):
         super().__init__(stocks_db_df, companies, symbols_stocks)
+        self.sector = ""
 
     def get_last_day(self):
         return self.stocks_prices_df["DateTime"].max()
 
-    def set_comparison_group(self, ticker_symbols=[]):
+    def set_comparison_group(self, ticker_symbols=[], sector="Technology"):
 
         self.ticker_symbols = ticker_symbols
         self.stocks = self.companies.loc[
@@ -26,11 +27,12 @@ class Index(Asset):
         ]
 
         self.stocks_no_faang_tech = self.stocks_no_faang.loc[
-            self.stocks_no_faang["Sector"] == "Technology"
+            self.stocks_no_faang["Sector"] == sector
         ]
         self.stocks_no_faang_no_tech = self.stocks_no_faang.loc[
-            self.stocks_no_faang["Sector"] != "Technology"
+            self.stocks_no_faang["Sector"] != sector
         ]
+        self.sector = sector
 
     def set_compare_dates(self, compare_date1, compare_date2):
 
@@ -38,13 +40,14 @@ class Index(Asset):
         compare_date2 = self.date_correction(compare_date2)
         print(compare_date1)
         print(compare_date2)
+        print(self.sector)
 
         if len(self.ticker_symbols):
             self.create_market_cap_period(
                 "MANTA", self.ticker_symbols, compare_date1, compare_date2
             )
         self.create_market_cap_period(
-            "TECH",
+            self.sector,
             self.stocks_no_faang_tech["Symbol"].tolist(),
             compare_date1,
             compare_date2,
@@ -109,7 +112,7 @@ class Index(Asset):
         self.create_market_cap_period_groups("ALL")
         if len(self.ticker_symbols):
             self.create_market_cap_period_groups("MANTA")
-        self.create_market_cap_period_groups("TECH")
+        self.create_market_cap_period_groups(self.sector)
         self.create_market_cap_period_groups("OTHERS")
 
         return (

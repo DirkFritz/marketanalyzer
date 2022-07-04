@@ -22,6 +22,7 @@ class Asset:
                 "Market Cap",
                 "Percent",
                 "Winner Period",
+                "Volume Percent",
             ]
         )
 
@@ -37,6 +38,10 @@ class Asset:
                 (self.stocks_prices_df["DateTime"] >= compare_date1)
                 & (self.stocks_prices_df["Symbol"] == symbol)
             ]["Close"]
+            volume_prices_start = self.stocks_prices_df[
+                (self.stocks_prices_df["DateTime"] >= compare_date1)
+                & (self.stocks_prices_df["Symbol"] == symbol)
+            ]["Volume"]
             price_per_stock = self.stocks_prices_df.loc[
                 (self.stocks_prices_df["DateTime"] >= compare_date1)
                 & (self.stocks_prices_df["DateTime"] <= compare_date2)
@@ -49,11 +54,10 @@ class Asset:
                 price_per_stock["Close"] / stock_prices_start.values[0]
             ) * 100 - 100
 
-            num_prices = len(stock_prices_start.values)
-            stock_prices_previous_day = np.ones(num_prices)
-            stock_prices_previous_day[1:num_prices] = stock_prices_start.values[
-                0 : num_prices - 1
-            ]
+            price_per_stock.loc[:, "Volume Percent"] = (
+                price_per_stock["Volume"] / volume_prices_start.values[0]
+            ) * 100 - 100
+
             price_per_stock.loc[:, "Winner Period"] = 0
 
             price_per_stock.loc[price_per_stock["Percent"] >= 0, "Winner Period"] = 1
@@ -66,6 +70,12 @@ class Asset:
 
     def create_market_cap_period_groups(self, group_name):
         dates = self.market_cap_period_df["DateTime"].unique()
+
+        group_first_date = self.market_cap_period_df[
+            (self.market_cap_period_df["Group"] == group_name)
+            & (self.market_cap_period_df["DateTime"] == dates[0])
+        ]
+       
         for date in dates:
             group_per_date = self.market_cap_period_df[
                 (self.market_cap_period_df["Group"] == group_name)
@@ -77,6 +87,10 @@ class Asset:
             percent_average = group_per_date["Percent"].sum() / len(
                 group_per_date["Symbol"].unique()
             )
+
+            volume_percent_average = (
+                group_per_date["Volume"].sum() / group_first_date["Volume"].sum()
+            ) * 100 - 100
 
             winners_period = (
                 group_per_date["Winner Period"].sum()
@@ -91,6 +105,7 @@ class Asset:
                     market_cap,
                     percent_average,
                     winners_period,
+                    volume_percent_average,
                 ]
             ]
             self.market_cap_period_groups = pd.concat(
@@ -104,6 +119,7 @@ class Asset:
                             "Market Cap",
                             "Average Percent",
                             "Winner Period",
+                            "Volume Percent",
                         ],
                     ),
                 ]

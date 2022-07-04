@@ -35,23 +35,36 @@ def generate_performer_group(performer, group_count):
             "format": percentage,
         },
         {"name": "GICS Sektor", "id": "Sector"},
+        {"name": "Industrie", "id": "Industry"},
     ]
 
     for i in range(group_count):
         performer_group = performer[performer["Labels"] == i][
-            ["Symbol", "Asset", "Performance", "Draw-Down", "Sector"]
+            ["Symbol", "Asset", "Performance", "Draw-Down", "Sector", "Industry"]
         ]
         performer_group_sector_count = (
             performer_group["Sector"].value_counts().reset_index()
         )
         fig_pie = px.pie(performer_group_sector_count, values="Sector", names="index")
+        performer_group_industry_count = (
+            performer_group["Industry"].value_counts().reset_index()
+        )
+        fig_pie_industry = px.pie(
+            performer_group_industry_count, values="Industry", names="index"
+        )
 
         tab_content = dbc.Card(
             dbc.CardBody(
                 dbc.Row(
                     [
                         dbc.Col(generate_data_dable(performer_group, columns), width=7),
-                        dbc.Col(dcc.Graph(figure=fig_pie), width=5),
+                        dbc.Col(
+                            [
+                                dbc.Row(dcc.Graph(figure=fig_pie)),
+                                dbc.Row(dcc.Graph(figure=fig_pie_industry)),
+                            ],
+                            width=5,
+                        ),
                     ]
                 )
             ),
